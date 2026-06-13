@@ -4,8 +4,6 @@ A daily diagnostic puzzle for dental students, pre-dental students, hygienists, 
 
 Inspired by the viral loop of Doctordle, but built around dentistry-specific diagnosis, radiographic interpretation, oral pathology, occlusion, emergencies, and treatment planning.
 
-Working folder name: `DentalDoodle`.
-
 Launch brand direction: `Dental`.
 
 Target domain direction: `dental.org`.
