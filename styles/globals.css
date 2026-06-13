@@ -1,0 +1,1064 @@
+:root {
+  --ink: #13211e;
+  --muted: #5a6864;
+  --line: #d8e1dd;
+  --paper: #fbfaf6;
+  --surface: #ffffff;
+  --teal: #067f73;
+  --dark: #0f2d2a;
+  --mint: #bde9dc;
+  --coral: #e86f58;
+  --gold: #d8a027;
+  --shadow: 0 18px 45px rgba(22, 33, 31, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.screen {
+  width: min(1180px, calc(100% - 32px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 22px 0 36px;
+}
+
+.appHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.brandMark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--teal);
+  color: white;
+}
+
+.brandMark svg {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+}
+
+.stepPills {
+  display: flex;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: white;
+}
+
+.stepPills span {
+  border-radius: 6px;
+  padding: 8px 11px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.stepPills .active {
+  background: var(--dark);
+  color: white;
+}
+
+.stage {
+  min-height: calc(100vh - 120px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.introStage {
+  display: grid;
+  align-content: center;
+  gap: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--teal);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  letter-spacing: 0;
+}
+
+.introCopy h1,
+.stageHeading h1 {
+  max-width: 820px;
+  margin: 0;
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: 0.9;
+}
+
+.introCopy p:not(.eyebrow),
+.stageHeading p:not(.eyebrow) {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.howCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.howCards article,
+.boardCard,
+.gamePanel,
+.imagePanel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+}
+
+.howCards article {
+  padding: 18px;
+}
+
+.howCards strong {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--teal);
+  color: white;
+}
+
+.howCards h2 {
+  margin: 16px 0 6px;
+}
+
+.howCards p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.primaryAction,
+.ghostAction {
+  min-height: 50px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 18px;
+  font-weight: 900;
+}
+
+.primaryAction {
+  justify-self: start;
+  min-width: 150px;
+  background: var(--teal);
+  color: white;
+}
+
+.primaryAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ghostAction {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+}
+
+.ghostAction.compact {
+  min-height: 36px;
+}
+
+.stageHeading {
+  margin-bottom: 20px;
+}
+
+.boardGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.boardCard {
+  min-height: 132px;
+  padding: 16px;
+  text-align: left;
+}
+
+.boardCard.selected {
+  border-color: var(--teal);
+  background: #eef8f5;
+  box-shadow: 0 0 0 3px rgba(6, 127, 115, 0.12);
+}
+
+.boardCard h2 {
+  margin: 34px 0 8px;
+}
+
+.boardCard p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.playStage {
+  padding: 18px;
+}
+
+.caseTopbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.caseTopbar span {
+  border-radius: 999px;
+  background: #eef5f2;
+  color: var(--teal);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.caseLayout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.imagePanel {
+  position: relative;
+  align-self: start;
+  height: 560px;
+  overflow: hidden;
+  background: #eef5f2;
+}
+
+.imagePanel img {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePanel img:not([src]),
+.imagePanel img[src=""] {
+  display: none;
+}
+
+.imageFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent),
+    repeating-linear-gradient(90deg, #243341 0 22px, #354d5e 22px 25px);
+  color: white;
+}
+
+.imageFallback svg {
+  width: 120px;
+  height: 120px;
+  fill: rgba(255, 255, 255, 0.86);
+}
+
+.imageFallback span {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  padding: 8px 12px;
+  font-weight: 900;
+}
+
+.imagePanel p {
+  position: absolute;
+  z-index: 3;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  margin: 0;
+  border-radius: 8px;
+  background: rgba(19, 33, 30, 0.74);
+  color: white;
+  padding: 10px;
+  font-size: 0.76rem;
+}
+
+.gamePanel {
+  padding: 24px;
+}
+
+.gamePanel h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 0.95;
+}
+
+.prompt {
+  margin: 18px 0;
+  border-left: 4px solid var(--teal);
+  padding-left: 14px;
+  color: #263330;
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.attempts {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin: 18px 0 8px;
+}
+
+.attempts span {
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+}
+
+.attempts .miss {
+  background: #f2b7ad;
+  border-color: #df7a6d;
+}
+
+.attempts .hit {
+  background: var(--mint);
+}
+
+.attemptLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.attemptLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.attemptLegend i {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+}
+
+.attemptLegend .miss {
+  background: #f2b7ad;
+  border-color: #df7a6d;
+}
+
+.attemptLegend .hit {
+  background: var(--mint);
+}
+
+.answerBox {
+  position: relative;
+}
+
+.answerBox input {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+  outline: none;
+}
+
+.answerBox input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(6, 127, 115, 0.14);
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+}
+
+.suggestions button {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-bottom: 1px solid #edf2ef;
+  background: white;
+  padding: 0 13px;
+  text-align: left;
+  font-weight: 850;
+}
+
+.suggestions button:hover {
+  background: #eef8f5;
+}
+
+.submitAction {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.clues {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.clue {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  padding: 13px;
+}
+
+.clue strong {
+  color: var(--teal);
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.clue p,
+.result p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.result {
+  margin-top: 18px;
+  border-radius: 8px;
+  background: #eef8f5;
+  padding: 18px;
+}
+
+.result h2 {
+  margin: 0;
+}
+
+.resultSubscribe {
+  margin: 0 8px 0 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.chips span {
+  border-radius: 999px;
+  background: white;
+  color: var(--teal);
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 45, 42, 0.42);
+  padding: 18px;
+}
+
+.subscribeModal {
+  position: relative;
+  width: min(470px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.modalClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.subscribeModal h2 {
+  max-width: 360px;
+  margin: 0;
+  font-size: 2.3rem;
+  line-height: 0.96;
+}
+
+.subscribeModal p:not(.eyebrow),
+.formError {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.subscribeForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.subscribeForm input {
+  min-width: 0;
+  min-height: 50px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 13px;
+}
+
+.subscribeSuccess {
+  margin-top: 18px;
+  border-radius: 8px;
+  background: #eef8f5;
+  color: var(--teal);
+  padding: 14px;
+  font-weight: 900;
+}
+
+.formError {
+  margin: 10px 0 0;
+  color: #a23d31;
+  font-weight: 800;
+}
+
+.adminShell {
+  width: min(1220px, calc(100% - 32px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.adminHeader,
+.panelHeader,
+.adminLogin,
+.adminActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adminHeader {
+  margin-bottom: 18px;
+}
+
+.adminHeader h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4.8rem);
+  line-height: 0.92;
+}
+
+.adminHome {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.adminLogin {
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.adminLogin input {
+  width: min(360px, 100%);
+  min-height: 50px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 13px;
+}
+
+.adminNotice,
+.adminPanel,
+.metricGrid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+}
+
+.adminNotice {
+  margin-bottom: 14px;
+  padding: 13px 15px;
+  color: var(--teal);
+  font-weight: 900;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.metricGrid article {
+  padding: 16px;
+}
+
+.metricGrid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.metricGrid strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 2rem;
+}
+
+.adminGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.adminPanel {
+  padding: 18px;
+}
+
+.adminPanel h2 {
+  margin: 0 0 12px;
+}
+
+.adminPanel p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.dailyChart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  min-height: 240px;
+  padding-top: 10px;
+}
+
+.dayBars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: 4px;
+  align-items: end;
+}
+
+.dayBars small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-weight: 900;
+  text-align: center;
+}
+
+.barTrack {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #edf3f0;
+}
+
+.barTrack span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 2px;
+  background: var(--teal);
+}
+
+.barTrack.guesses span {
+  background: var(--gold);
+}
+
+.barTrack.solves span {
+  background: var(--coral);
+}
+
+.chartLegend {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.chartLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chartLegend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--teal);
+}
+
+.chartLegend span:nth-child(2) i {
+  background: var(--gold);
+}
+
+.chartLegend span:nth-child(3) i {
+  background: var(--coral);
+}
+
+.boardBars {
+  display: grid;
+  gap: 12px;
+}
+
+.boardBars > div {
+  display: grid;
+  gap: 7px;
+}
+
+.boardBars > div > div,
+.subscriberList > div,
+.publishedList > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.boardBars span,
+.subscriberList span,
+.publishedList span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.boardBars i {
+  display: block;
+  height: 10px;
+  min-width: 2px;
+  border-radius: 999px;
+  background: var(--teal);
+}
+
+.subscriberList,
+.publishedList,
+.missingList {
+  display: grid;
+  gap: 10px;
+}
+
+.subscriberList > div,
+.publishedList > div,
+.missingList span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 11px;
+}
+
+.missingList span {
+  color: #a23d31;
+  font-weight: 900;
+}
+
+.publishedList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+  .howCards,
+  .boardGrid,
+  .caseLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .imagePanel {
+    height: 320px;
+  }
+
+  .metricGrid,
+  .adminGrid,
+  .publishedList {
+    grid-template-columns: 1fr;
+  }
+
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .screen {
+    width: min(100% - 16px, 1180px);
+    padding: 8px 0 14px;
+  }
+
+  .appHeader {
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .brand {
+    gap: 7px;
+    font-size: 1.05rem;
+  }
+
+  .brandMark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brandMark svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stepPills {
+    flex: 1;
+    justify-content: stretch;
+    gap: 3px;
+    padding: 3px;
+  }
+
+  .stepPills span {
+    flex: 1;
+    padding: 6px 5px;
+    font-size: 0.68rem;
+    text-align: center;
+  }
+
+  .stage {
+    min-height: calc(100svh - 62px);
+    padding: 14px;
+  }
+
+  .introStage {
+    align-content: start;
+    gap: 12px;
+  }
+
+  .eyebrow {
+    margin-bottom: 5px;
+    font-size: 0.66rem;
+  }
+
+  .introCopy h1,
+  .stageHeading h1 {
+    max-width: 330px;
+    font-size: 2.35rem;
+    line-height: 0.92;
+  }
+
+  .introCopy p:not(.eyebrow),
+  .stageHeading p:not(.eyebrow) {
+    margin-top: 10px;
+    font-size: 0.92rem;
+    line-height: 1.35;
+  }
+
+  .howCards {
+    gap: 8px;
+  }
+
+  .howCards article {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .howCards strong {
+    width: 28px;
+    height: 28px;
+    grid-row: span 2;
+    font-size: 0.85rem;
+  }
+
+  .howCards h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .howCards p {
+    margin-top: 2px;
+    font-size: 0.84rem;
+    line-height: 1.3;
+  }
+
+  .primaryAction,
+  .ghostAction {
+    min-height: 44px;
+  }
+
+  .introStage > .primaryAction {
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .stageHeading {
+    margin-bottom: 12px;
+  }
+
+  .boardGrid {
+    gap: 8px;
+  }
+
+  .boardCard {
+    min-height: 74px;
+    padding: 12px;
+  }
+
+  .boardCard h2 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+
+  .boardCard p {
+    font-size: 0.82rem;
+  }
+
+  .footerActions {
+    margin-top: 12px;
+  }
+
+  .footerActions .primaryAction,
+  .footerActions .ghostAction {
+    flex: 1;
+  }
+
+  .suggestions {
+    top: auto;
+    bottom: calc(100% + 6px);
+  }
+
+  .subscribeModal {
+    padding: 18px;
+  }
+
+  .subscribeModal h2 {
+    font-size: 1.8rem;
+  }
+
+  .subscribeForm {
+    grid-template-columns: 1fr;
+  }
+
+  .adminShell {
+    width: min(100% - 16px, 1220px);
+    padding-top: 10px;
+  }
+
+  .adminHeader,
+  .adminLogin,
+  .adminActions,
+  .panelHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .adminHeader h1 {
+    font-size: 2.4rem;
+  }
+
+  .metricGrid {
+    gap: 8px;
+  }
+
+  .metricGrid article,
+  .adminPanel {
+    padding: 13px;
+  }
+
+  .dailyChart {
+    min-height: 180px;
+  }
+
+  .barTrack {
+    height: 145px;
+  }
+}
