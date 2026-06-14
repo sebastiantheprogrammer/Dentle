@@ -10,6 +10,37 @@ const fallbackImages: Record<string, DentalCase["image"]> = {
   "Treatment Plan": cases[3].image,
   Emergency: cases[4].image
 };
+const modeImageQueries: Record<string, string[]> = {
+  "Dentle Dx": [
+    "dental caries xray",
+    "tooth decay dental radiograph",
+    "root canal dental xray"
+  ],
+  Radiograph: [
+    "dental xray",
+    "panoramic dental radiograph",
+    "impacted wisdom tooth xray",
+    "jaw radiograph dental"
+  ],
+  "Oral Path": [
+    "oral lesion mouth",
+    "oral pathology clinical",
+    "mouth ulcer clinical",
+    "tongue lesion oral"
+  ],
+  "Treatment Plan": [
+    "dental trauma tooth",
+    "avulsed tooth",
+    "fractured tooth dental",
+    "dental treatment clinical"
+  ],
+  Emergency: [
+    "dental emergency kit",
+    "glucose meter medical",
+    "glucagon emergency kit",
+    "medical emergency dental office"
+  ]
+};
 
 export function todaySeed(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -196,9 +227,32 @@ async function findImageForCase(dentalCase: GeneratedDentleCase, seed: string) {
   ].filter(Boolean).join(" ");
 
   const fallbackQuery = [dentalCase.answer, dentalCase.category, "dental"].filter(Boolean).join(" ");
-  const results = (await searchOpenverseImages(targetedQuery)).concat(await searchOpenverseImages(fallbackQuery));
+  const queries = [
+    targetedQuery,
+    fallbackQuery,
+    ...(modeImageQueries[dentalCase.mode] || []),
+    `${dentalCase.mode} dentistry`,
+    "dental education"
+  ];
+  const seenQueries = new Set<string>();
+  const results: OpenverseImage[] = [];
 
-  const image = results[seededIndex(`${seed}-${dentalCase.mode}-${dentalCase.answer}`, results.length)];
+  for (const query of queries) {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery || seenQueries.has(normalizedQuery)) continue;
+    seenQueries.add(normalizedQuery);
+    results.push(...await searchOpenverseImages(query));
+    if (results.length >= 12) break;
+  }
+
+  const originalSrc = fallbackImages[dentalCase.mode]?.src || dentalCase.image.src;
+  const uniqueResults = results.filter((image, index, all) => {
+    const imageUrl = image.thumbnail || image.url || "";
+    if (!imageUrl || imageUrl === originalSrc || image.url === originalSrc) return false;
+    return all.findIndex((candidate) => (candidate.thumbnail || candidate.url) === imageUrl) === index;
+  });
+
+  const image = uniqueResults[seededIndex(`${seed}-${dentalCase.mode}-${dentalCase.answer}`, uniqueResults.length)];
   if (!image) return dentalCase;
 
   return {
