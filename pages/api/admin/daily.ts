@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { DentalCase } from "../../../lib/cases";
-import { describeGeminiIssue, generateDailyBoards, todaySeed } from "../../../lib/gemini";
+import { describeAiIssue, generateDailyBoards, todaySeed } from "../../../lib/ai";
 import { getSupabaseStatus, isAdminKeyValid, supabaseRest } from "../../../lib/supabaseRest";
 
 function isCaseList(value: unknown): value is DentalCase[] {
@@ -57,8 +57,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).json({ error: "Use GET or POST." });
   } catch (error) {
     console.error(error);
-    const isGeminiError = error instanceof Error && error.message.includes("Gemini request failed");
-    const issue = isGeminiError ? describeGeminiIssue(error) : null;
+    const isAiError = error instanceof Error && error.message.includes("Claude request failed");
+    const issue = isAiError ? describeAiIssue(error) : null;
 
     res.status(500).json({
       error: issue?.error || (error instanceof Error ? error.message : "Daily case update failed."),

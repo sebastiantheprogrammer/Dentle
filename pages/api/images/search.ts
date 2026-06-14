@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const url = new URL("https://api.openverse.engineering/v1/images/");
+  const url = new URL("https://api.openverse.org/v1/images/");
   url.searchParams.set("q", query);
   url.searchParams.set("page_size", "8");
   url.searchParams.set("license_type", "commercial,modification");

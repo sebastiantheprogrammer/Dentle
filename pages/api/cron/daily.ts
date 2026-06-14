@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { DentalCase } from "../../../lib/cases";
-import { describeGeminiIssue, generateDailyBoards, todaySeed } from "../../../lib/gemini";
+import { describeAiIssue, generateDailyBoards, todaySeed } from "../../../lib/ai";
 import { getSupabaseStatus, supabaseRest } from "../../../lib/supabaseRest";
 
 function hasCronAccess(req: NextApiRequest) {
@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
       body: JSON.stringify({
         publish_date: publishDate,
-        source: "gemini-cron",
+        source: "claude-cron",
         status: "published",
         cases: generated,
         updated_at: new Date().toISOString()
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json({ published: true, publishDate, boards: generated.length });
   } catch (error) {
     console.error(error);
-    const issue = describeGeminiIssue(error);
+    const issue = describeAiIssue(error);
     res.status(500).json({ error: issue.error, nextStep: issue.nextStep });
   }
 }

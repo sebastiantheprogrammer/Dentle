@@ -32,15 +32,15 @@ GET /api/diagnoses?q=gingvit
 GET /api/images/search?q=dentigerous+cyst+radiograph
 ```
 
-`/api/today` is the main daily board endpoint. It uses Gemini when `GEMINI_API_KEY` is available, caches the result for the date, and safely falls back to the reviewed launch cases if AI generation fails.
+`/api/today` is the main daily board endpoint. It uses Claude when `ANTHROPIC_API_KEY` is available, caches the result for the date, and safely falls back to the reviewed launch cases if AI generation fails.
 
-`/api/admin/generate-case` is the single-board test endpoint. It is useful for checking whether the Gemini key and model have working access before relying on daily automation.
+`/api/admin/generate-case` is the single-board test endpoint. It is useful for checking whether the Claude key and model have working access before relying on daily automation.
 
 Environment variables:
 
 ```text
-GEMINI_API_KEY=...
-GEMINI_MODEL=gemini-3.5-flash
+ANTHROPIC_API_KEY=...
+ANTHROPIC_MODEL=claude-haiku-4-5
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ADMIN_PASSWORD=...
@@ -80,13 +80,15 @@ The admin page can:
 - view board activity
 - view recent subscribers
 - publish reviewed boards for today
-- generate and publish Gemini boards for today when Gemini access/quota works
+- generate and publish Claude boards for today when Claude access/quota works
 
 For hands-off daily automation, schedule `GET /api/cron/daily` once per day with `Authorization: Bearer <CRON_SECRET>`. The route skips generation if that date is already published.
 
-Gemini daily generation now requests all five boards in one API call instead of one call per board. This reduces free-tier quota pressure and makes the daily job less likely to fail halfway through.
+Claude daily generation requests all five boards in one API call instead of one call per board. This reduces token pressure and makes the daily job less likely to fail halfway through.
 
-Current blocked item: the API call reaches Google, but the configured project can hit provider-side access or quota limits. If the route returns a warning, check the `nextStep` field, rotate any exposed key, and confirm Gemini API access/quota in Google AI Studio.
+After Claude generates the case text, Dentle searches Openverse using the generated `image.apiQuery`, answer, mode, and category. The selected licensed image is saved with the daily case in Supabase, so AI-published boards do not reuse the same fallback photos every day unless image search fails.
+
+Current setup item: add `ANTHROPIC_API_KEY` in local and Vercel environment variables. If the route returns a warning, check the `nextStep` field, model name, and Anthropic Console credits/rate limits.
 
 ## Do We Need To Change Languages?
 
@@ -103,7 +105,7 @@ Best fit if we want:
 - website and backend in one project
 - scheduled daily jobs
 - API routes for diagnosis search
-- Gemini or OpenAI calls from the server
+- Claude or OpenAI calls from the server
 - easy deployment on Vercel
 - future admin dashboard
 
@@ -173,11 +175,11 @@ Daily pipeline:
 6. Human reviewer approves.
 7. Scheduled job publishes at midnight.
 
-## Gemini API Shape
+## Claude API Shape
 
-Use Gemini from a server route, with structured output so the model returns a strict case JSON object.
+Use Claude from a server route, prompting it to return a strict case JSON object.
 
-Do not call Gemini directly from browser JavaScript.
+Do not call Claude directly from browser JavaScript.
 
 Single-board endpoint:
 

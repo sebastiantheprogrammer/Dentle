@@ -91,11 +91,11 @@ export default function Admin() {
       const response = await fetch("/api/admin/daily", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ source: "gemini-admin" })
+        body: JSON.stringify({ source: "claude-admin" })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "AI publish failed.");
-      setMessage("AI boards generated and published for today.");
+      setMessage("Claude boards generated and published for today.");
       await loadMetrics();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "AI publish failed.");
@@ -195,7 +195,7 @@ export default function Admin() {
             <section className="adminGrid">
               <article className="adminPanel">
                 <h2>Daily question control</h2>
-                <p>Publish reviewed boards now, or let Gemini generate today's five boards and save them to Supabase.</p>
+                <p>Publish reviewed boards now, or let Claude generate today's five boards and save them to Supabase.</p>
                 <div className="adminActions">
                   <button className="primaryAction" type="button" onClick={publishReviewedCases} disabled={loading}>Publish reviewed</button>
                   <button className="ghostAction" type="button" onClick={generateAndPublishAi} disabled={loading}>Generate AI today</button>

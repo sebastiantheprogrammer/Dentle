@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { cases, type DentalCase } from "../../lib/cases";
-import { describeGeminiIssue, generateDailyBoards, todaySeed } from "../../lib/gemini";
+import { describeAiIssue, generateDailyBoards, todaySeed } from "../../lib/ai";
 import { getSupabaseStatus, supabaseRest } from "../../lib/supabaseRest";
 
 let cachedDaily:
@@ -38,19 +38,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    cachedDaily = { cases, seed, source: "static-fallback", warning: "Missing Gemini API key." };
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.CLAUDE_API_KEY) {
+    cachedDaily = { cases, seed, source: "static-fallback", warning: "Missing Claude API key." };
     res.status(200).json(cachedDaily);
     return;
   }
 
   try {
     const generated = await generateDailyBoards(seed);
-    cachedDaily = { cases: generated, seed, source: "gemini" };
+    cachedDaily = { cases: generated, seed, source: "claude" };
     res.status(200).json(cachedDaily);
   } catch (error) {
     console.error(error);
-    const issue = describeGeminiIssue(error);
+    const issue = describeAiIssue(error);
     cachedDaily = {
       cases,
       seed,
