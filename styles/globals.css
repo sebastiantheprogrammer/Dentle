@@ -10,6 +10,8 @@
   --coral: #e86f58;
   --gold: #d8a027;
   --shadow: 0 18px 45px rgba(22, 33, 31, 0.1);
+  --font-display: "Pinyon Script", cursive;
+  --font-ui: "Story Script", cursive;
 }
 
 * {
@@ -20,12 +22,20 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-ui);
+  font-size: 1.12rem;
 }
 
 button,
 input {
   font: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
 }
 
 button {
@@ -52,8 +62,8 @@ button {
   align-items: center;
   gap: 10px;
   color: var(--ink);
-  font-size: 1.25rem;
-  font-weight: 900;
+  font-size: 1.55rem;
+  font-weight: 400;
   text-decoration: none;
 }
 
@@ -86,8 +96,8 @@ button {
   border-radius: 6px;
   padding: 8px 11px;
   color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 900;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 .stepPills .active {
@@ -113,8 +123,8 @@ button {
 .eyebrow {
   margin: 0 0 8px;
   color: var(--teal);
-  font-size: 0.76rem;
-  font-weight: 900;
+  font-size: 0.92rem;
+  font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -198,7 +208,8 @@ p {
   border: 0;
   border-radius: 8px;
   padding: 0 18px;
-  font-weight: 900;
+  font-weight: 400;
+  font-size: 1.1rem;
 }
 
 .primaryAction {
@@ -714,7 +725,7 @@ p {
   width: min(1220px, calc(100% - 32px));
   min-height: 100vh;
   margin: 0 auto;
-  padding: 24px 0 40px;
+  padding: 24px 0 48px;
 }
 
 .adminHeader,
@@ -728,13 +739,13 @@ p {
 }
 
 .adminHeader {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .adminHeader h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 5vw, 4.8rem);
-  line-height: 0.92;
+  font-size: clamp(3rem, 6vw, 5.6rem);
+  line-height: 0.95;
 }
 
 .adminHome {
@@ -745,7 +756,7 @@ p {
 
 .adminLogin {
   justify-content: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .adminLogin.activeSession {
@@ -779,8 +790,8 @@ p {
 }
 
 .adminNotice {
-  margin-bottom: 14px;
-  padding: 13px 15px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
   color: var(--teal);
   font-weight: 900;
   animation: adminNoticeIn 280ms ease-out;
@@ -842,41 +853,50 @@ p {
 .metricGrid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 14px;
+  margin: 0;
 }
 
 .metricGrid article {
-  padding: 16px;
+  display: grid;
+  min-height: 116px;
+  align-content: center;
+  padding: 18px;
 }
 
 .metricGrid span {
   display: block;
   color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 900;
+  font-size: 0.9rem;
+  font-weight: 400;
   text-transform: uppercase;
 }
 
 .metricGrid strong {
   display: block;
   margin-top: 8px;
-  font-size: 2rem;
+  font-size: 2.25rem;
+}
+
+.adminData {
+  display: grid;
+  gap: 16px;
 }
 
 .adminGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 16px;
+  margin: 0;
 }
 
 .adminPanel {
-  padding: 18px;
+  min-width: 0;
+  padding: 22px;
 }
 
 .cloudPlayersPanel {
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 .cloudPlayersPanel .panelHeader > div > h2 {
@@ -886,22 +906,23 @@ p {
 .cloudPlayerGrid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 18px;
 }
 
 .cloudPlayerGrid > div {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfdfc;
-  padding: 14px;
+  min-height: 96px;
+  padding: 16px;
 }
 
 .cloudPlayerGrid span {
   display: block;
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 900;
+  font-size: 0.86rem;
+  font-weight: 400;
   text-transform: uppercase;
 }
 
@@ -909,7 +930,7 @@ p {
   display: block;
   margin-top: 7px;
   color: var(--teal);
-  font-size: 1.55rem;
+  font-size: 1.8rem;
 }
 
 .cloudPlayerList {
@@ -945,7 +966,9 @@ p {
 }
 
 .adminPanel h2 {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
+  font-size: 2.15rem;
+  line-height: 1;
 }
 
 .adminPanel p {
@@ -1083,7 +1106,7 @@ p {
 .statusGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .statusGrid.twoColumn {
@@ -1094,14 +1117,15 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfdfc;
-  padding: 12px;
+  min-height: 92px;
+  padding: 14px;
 }
 
 .statusGrid span {
   display: block;
   color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 900;
+  font-size: 0.86rem;
+  font-weight: 400;
   text-transform: uppercase;
 }
 
