@@ -316,32 +316,38 @@ export default function Home() {
       });
   }
 
+  function promptForEmailAfterFourthGuess() {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    if (
+      window.localStorage.getItem("dentle_subscribed") !== "true" &&
+      window.localStorage.getItem(`dentle_subscribe_dismissed_${todayKey}`) !== "true"
+    ) {
+      setSubscribeOpen(true);
+      trackEvent("subscribe_prompt_view", selectedCase);
+    }
+  }
+
   function submitGuess() {
     setSuggestionsOpen(false);
     if (!guess.trim() || finished) return;
     const submittedGuess = guess.trim();
+    const attemptNumber = attempts.length + 1;
 
     if (isCorrectAnswer(submittedGuess, selectedCase)) {
       trackEvent("guess_submit", selectedCase, {
-        attemptNumber: attempts.length + 1,
+        attemptNumber,
         isCorrect: true,
         metadata: { guess_text: submittedGuess.slice(0, 120) }
       });
-      trackEvent("board_solved", selectedCase, { attemptNumber: attempts.length + 1 });
-      recordCompletedBoard(selectedCase, true, attempts.length + 1);
+      trackEvent("board_solved", selectedCase, { attemptNumber });
+      recordCompletedBoard(selectedCase, true, attemptNumber);
       setAttempts((current) => [...current, "hit"]);
       setFinished(true);
       setSolved(true);
       setGuess("");
       setSuggestionsOpen(false);
       setApiSuggestions([]);
-      window.setTimeout(() => {
-        const todayKey = new Date().toISOString().slice(0, 10);
-        if (window.localStorage.getItem("dentle_subscribed") !== "true" && window.localStorage.getItem(`dentle_subscribe_dismissed_${todayKey}`) !== "true") {
-          setSubscribeOpen(true);
-          trackEvent("subscribe_prompt_view", selectedCase);
-        }
-      }, 6000);
+      if (attemptNumber === 4) promptForEmailAfterFourthGuess();
       return;
     }
 
@@ -355,6 +361,7 @@ export default function Home() {
     setGuess("");
     setSuggestionsOpen(false);
     setApiSuggestions([]);
+    if (nextAttempts.length === 4) promptForEmailAfterFourthGuess();
 
     if (nextAttempts.length >= 6) {
       trackEvent("board_failed", selectedCase, { attemptNumber: nextAttempts.length });

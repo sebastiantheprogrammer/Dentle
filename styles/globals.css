@@ -41,6 +41,57 @@ button {
   cursor: pointer;
 }
 
+.siteFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  border-top: 1px solid var(--line);
+  padding: 22px 0 28px;
+  color: var(--muted);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.siteFooter a,
+.legalPage a {
+  color: var(--teal);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.legalPage {
+  width: min(760px, calc(100% - 32px));
+  min-height: calc(100vh - 90px);
+  margin: 0 auto;
+  padding: 44px 0 64px;
+}
+
+.legalPage h1 {
+  margin: 8px 0 20px;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 0.95;
+}
+
+.legalPage h2 {
+  margin: 32px 0 8px;
+  font-size: 2rem;
+}
+
+.legalPage p {
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.legalBack {
+  display: inline-block;
+  margin-bottom: 28px;
+  font-size: 1.4rem;
+}
+
 .screen {
   width: min(1180px, calc(100% - 32px));
   min-height: 100vh;

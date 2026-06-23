@@ -1,19 +1,19 @@
 import type { AppProps } from "next/app";
-import Head from "next/head";
 import "../styles/globals.css";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
-      <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Story+Script&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
       <Component {...pageProps} />
+      <footer className="siteFooter">
+        <span>© 2026 Sebrium Industries</span>
+        <span aria-hidden="true">|</span>
+        <a href="mailto:hello@sebrium.com">hello@sebrium.com</a>
+        <span aria-hidden="true">|</span>
+        <a href="/privacy">Privacy Policy</a>
+        <span aria-hidden="true">|</span>
+        <a href="/data-deletion">Data Deletion</a>
+      </footer>
     </>
   );
 }
