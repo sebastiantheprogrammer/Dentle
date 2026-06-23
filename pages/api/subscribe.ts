@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { rateLimit } from "../../lib/rateLimit";
 import { getSupabaseStatus, supabaseRest } from "../../lib/supabaseRest";
 
 function normalizeEmail(value: unknown) {
@@ -8,6 +9,13 @@ function normalizeEmail(value: unknown) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Use POST." });
+    return;
+  }
+
+  const limit = rateLimit(req, "subscribe", 5, 60_000);
+  if (limit.limited) {
+    res.setHeader("Retry-After", String(limit.retryAfter));
+    res.status(429).json({ subscribed: false, error: "Too many subscription attempts." });
     return;
   }
 

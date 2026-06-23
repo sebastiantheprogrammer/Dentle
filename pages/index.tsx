@@ -11,6 +11,25 @@ type ApiDiagnosis = {
   category: string;
 };
 type SubscribeState = "idle" | "saving" | "saved" | "error";
+type PlayerStats = {
+  gamesPlayed: number;
+  wins: number;
+  currentStreak: number;
+  longestStreak: number;
+  distribution: number[];
+  completedBoards: Record<string, true>;
+  winDates: string[];
+};
+
+const emptyPlayerStats: PlayerStats = {
+  gamesPlayed: 0,
+  wins: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  distribution: [0, 0, 0, 0, 0, 0],
+  completedBoards: {},
+  winDates: []
+};
 
 function ToothIcon() {
   return (
@@ -68,6 +87,54 @@ function trackEvent(eventType: string, dentalCase?: DentalCase, extra: Record<st
   }).catch(() => {});
 }
 
+function dateBefore(date: string) {
+  const value = new Date(`${date}T00:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() - 1);
+  return value.toISOString().slice(0, 10);
+}
+
+function calculateStreaks(winDates: string[]) {
+  const dates = [...new Set(winDates)].sort();
+  let longest = 0;
+  let run = 0;
+  let previous = "";
+
+  dates.forEach((date) => {
+    run = previous && dateBefore(date) === previous ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    previous = date;
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+  let current = 0;
+  let cursor = dates.includes(today) ? today : dateBefore(today);
+  const dateSet = new Set(dates);
+  while (dateSet.has(cursor)) {
+    current += 1;
+    cursor = dateBefore(cursor);
+  }
+
+  return { current, longest };
+}
+
+function storePlayerStats(stats: PlayerStats) {
+  window.localStorage.setItem("dentle_player_stats", JSON.stringify(stats));
+}
+
+function normalizePlayerStats(value: Partial<PlayerStats>): PlayerStats {
+  const winDates = Array.isArray(value.winDates) ? value.winDates : [];
+  const streaks = calculateStreaks(winDates);
+  return {
+    gamesPlayed: Number(value.gamesPlayed) || 0,
+    wins: Number(value.wins) || 0,
+    currentStreak: Number(value.currentStreak) || streaks.current,
+    longestStreak: Math.max(Number(value.longestStreak) || 0, streaks.longest),
+    distribution: Array.from({ length: 6 }, (_, index) => Number(value.distribution?.[index]) || 0),
+    completedBoards: value.completedBoards || {},
+    winDates
+  };
+}
+
 export default function Home() {
   const [step, setStep] = useState<Step>("intro");
   const [dailyCases, setDailyCases] = useState<DentalCase[]>(cases);
@@ -82,6 +149,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle");
   const [subscribeError, setSubscribeError] = useState("");
+  const [playerStats, setPlayerStats] = useState<PlayerStats>(emptyPlayerStats);
   const selectedCase = dailyCases.find((dentalCase) => dentalCase.id === selectedId) || dailyCases[0] || cases[0];
   const localSuggestions = useMemo(() => getSuggestions(guess), [guess]);
   const suggestions = useMemo(() => [...new Set([...apiSuggestions, ...localSuggestions])].slice(0, 8), [apiSuggestions, localSuggestions]);
@@ -148,6 +216,36 @@ export default function Home() {
     trackEvent("page_view");
   }, []);
 
+  useEffect(() => {
+    let localStats = emptyPlayerStats;
+
+    try {
+      const saved = window.localStorage.getItem("dentle_player_stats");
+      if (saved) {
+        localStats = normalizePlayerStats(JSON.parse(saved) as Partial<PlayerStats>);
+        setPlayerStats(localStats);
+      }
+    } catch {
+      setPlayerStats(emptyPlayerStats);
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/player-stats?visitorId=${encodeURIComponent(visitorId())}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.stats) return;
+        const serverStats = normalizePlayerStats(data.stats);
+        setPlayerStats(serverStats);
+        storePlayerStats(serverStats);
+      })
+      .catch(() => {
+        // Keep the local cache when Supabase or the network is unavailable.
+      });
+
+    return () => controller.abort();
+  }, []);
+
   function chooseBoard(id: string) {
     const dentalCase = dailyCases.find((item) => item.id === id);
     trackEvent("board_select", dentalCase);
@@ -166,13 +264,71 @@ export default function Home() {
     setSubscribeState("idle");
   }
 
+  function recordCompletedBoard(dentalCase: DentalCase, wasSolved: boolean, attemptNumber: number) {
+    const today = new Date().toISOString().slice(0, 10);
+    const completionKey = `${today}:${dentalCase.id}`;
+
+    setPlayerStats((current) => {
+      if (current.completedBoards[completionKey]) return current;
+
+      const distribution = [...current.distribution];
+      if (wasSolved && attemptNumber >= 1 && attemptNumber <= 6) {
+        distribution[attemptNumber - 1] += 1;
+      }
+
+      const winDates = wasSolved ? [...new Set([...current.winDates, today])] : current.winDates;
+      const streaks = calculateStreaks(winDates);
+      const next: PlayerStats = {
+        gamesPlayed: current.gamesPlayed + 1,
+        wins: current.wins + (wasSolved ? 1 : 0),
+        currentStreak: streaks.current,
+        longestStreak: Math.max(current.longestStreak, streaks.longest),
+        distribution,
+        completedBoards: { ...current.completedBoards, [completionKey]: true },
+        winDates
+      };
+
+      storePlayerStats(next);
+      return next;
+    });
+
+    fetch("/api/player-stats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        visitorId: visitorId(),
+        boardId: dentalCase.id,
+        boardDate: today,
+        solved: wasSolved,
+        attemptNumber
+      })
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.stats) return;
+        const serverStats = normalizePlayerStats(data.stats);
+        setPlayerStats(serverStats);
+        storePlayerStats(serverStats);
+      })
+      .catch(() => {
+        // The local update remains available offline.
+      });
+  }
+
   function submitGuess() {
     setSuggestionsOpen(false);
     if (!guess.trim() || finished) return;
+    const submittedGuess = guess.trim();
 
-    if (isCorrectAnswer(guess, selectedCase)) {
-      trackEvent("guess_submit", selectedCase, { attemptNumber: attempts.length + 1, isCorrect: true });
+    if (isCorrectAnswer(submittedGuess, selectedCase)) {
+      trackEvent("guess_submit", selectedCase, {
+        attemptNumber: attempts.length + 1,
+        isCorrect: true,
+        metadata: { guess_text: submittedGuess.slice(0, 120) }
+      });
       trackEvent("board_solved", selectedCase, { attemptNumber: attempts.length + 1 });
+      recordCompletedBoard(selectedCase, true, attempts.length + 1);
       setAttempts((current) => [...current, "hit"]);
       setFinished(true);
       setSolved(true);
@@ -190,7 +346,11 @@ export default function Home() {
     }
 
     const nextAttempts = [...attempts, "miss"] as ("miss" | "hit")[];
-    trackEvent("guess_submit", selectedCase, { attemptNumber: nextAttempts.length, isCorrect: false });
+    trackEvent("guess_submit", selectedCase, {
+      attemptNumber: nextAttempts.length,
+      isCorrect: false,
+      metadata: { guess_text: submittedGuess.slice(0, 120) }
+    });
     setAttempts(nextAttempts);
     setGuess("");
     setSuggestionsOpen(false);
@@ -198,6 +358,7 @@ export default function Home() {
 
     if (nextAttempts.length >= 6) {
       trackEvent("board_failed", selectedCase, { attemptNumber: nextAttempts.length });
+      recordCompletedBoard(selectedCase, false, nextAttempts.length);
       setFinished(true);
       setSolved(false);
     }
@@ -272,17 +433,17 @@ export default function Home() {
 
           <div className="howCards">
             <article>
-              <strong>1</strong>
+              <strong aria-hidden="true">👁️</strong>
               <h2>Look</h2>
-              <p>Read the short case and inspect the image.</p>
+              <p>Read the short case and review the clinical details.</p>
             </article>
             <article>
-              <strong>2</strong>
+              <strong aria-hidden="true">⌨️</strong>
               <h2>Type</h2>
               <p>Start typing. The diagnosis list helps with spelling.</p>
             </article>
             <article>
-              <strong>3</strong>
+              <strong aria-hidden="true">🎓</strong>
               <h2>Learn</h2>
               <p>After the board, see the answer and why it fits.</p>
             </article>
@@ -329,21 +490,6 @@ export default function Home() {
           </div>
 
           <div className="caseLayout">
-            <article className="imagePanel">
-              <img
-                src={selectedCase.image.src}
-                alt={selectedCase.image.alt}
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-              <div className="imageFallback" aria-hidden="true">
-                <ToothIcon />
-                <span>{selectedCase.category}</span>
-              </div>
-              <p>{selectedCase.image.credit}</p>
-            </article>
-
             <article className="gamePanel">
               <p className="eyebrow">{selectedCase.category}</p>
               <h1 id="case-title">{selectedCase.title}</h1>
@@ -423,6 +569,42 @@ export default function Home() {
                 </div>
               )}
             </article>
+
+            <section className="playerStats" aria-labelledby="player-stats-title">
+              <h2 id="player-stats-title">Your Statistics</h2>
+              <div className="playerStatGrid">
+                <article>
+                  <strong>{playerStats.gamesPlayed}</strong>
+                  <span>Games played</span>
+                </article>
+                <article>
+                  <strong>{playerStats.gamesPlayed ? Math.round((playerStats.wins / playerStats.gamesPlayed) * 100) : 0}%</strong>
+                  <span>Win rate</span>
+                </article>
+                <article>
+                  <strong>{playerStats.currentStreak}</strong>
+                  <span>Current streak</span>
+                </article>
+                <article>
+                  <strong>{playerStats.longestStreak}</strong>
+                  <span>Longest streak</span>
+                </article>
+              </div>
+
+              <div className="guessDistribution">
+                <h3>Guess Distribution</h3>
+                {playerStats.distribution.map((count, index) => {
+                  const max = Math.max(1, ...playerStats.distribution);
+                  const width = count ? Math.max(8, (count / max) * 100) : 0;
+                  return (
+                    <div className="distributionRow" key={index}>
+                      <strong>{index + 1}</strong>
+                      <div><span style={{ width: `${width}%` }}>{count || ""}</span></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </div>
         </section>
       )}

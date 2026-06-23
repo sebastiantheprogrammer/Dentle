@@ -21,13 +21,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const [events, subscribers, dailyCases] = await Promise.all([
       supabaseRest<DentleEvent[]>(
-        `dentle_events?select=id,created_at,event_type,board_id,board_mode,board_category,is_correct,attempt_number&created_at=gte.${encodeURIComponent(since.toISOString())}&order=created_at.asc&limit=5000`
+        `dentle_events?select=id,created_at,visitor_id,event_type,board_id,board_mode,board_category,is_correct,attempt_number,metadata&created_at=gte.${encodeURIComponent(since.toISOString())}&order=created_at.asc&limit=5000`
       ),
       supabaseRest<Subscriber[]>("dentle_subscribers?select=id,created_at,email&order=created_at.desc&limit=500"),
       supabaseRest<DailyCaseRecord[]>("dentle_daily_cases?select=id,publish_date,source,status,cases,created_at,updated_at&order=publish_date.desc&limit=14")
     ]);
 
-    res.status(200).json({ connected: true, ...buildMetrics(events, subscribers, dailyCases) });
+    res.status(200).json({
+      connected: true,
+      cronConfigured: !!process.env.CRON_SECRET,
+      aiConfigured: !!process.env.ANTHROPIC_API_KEY,
+      ...buildMetrics(events, subscribers, dailyCases)
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ connected: false, error: "Could not load Supabase metrics." });

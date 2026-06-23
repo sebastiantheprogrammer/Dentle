@@ -6,10 +6,7 @@
     "dev": "next dev -p 4173",
     "build": "next build",
     "start": "next start -p 4173",
-    "lint": "next lint",
-    "video:studio": "remotion studio remotion/index.ts",
-    "video:still": "remotion still remotion/index.ts DentleTikTokAd out/dentle-tiktok-ad-frame.png --frame=300",
-    "video:render": "remotion render remotion/index.ts DentleTikTokAd out/dentle-tiktok-ad.mp4 --codec=h264 --pixel-format=yuv420p"
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -19,11 +16,9 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@remotion/cli": "^4.0.477",
     "@types/node": "^22.15.30",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "remotion": "^4.0.477",
     "typescript": "^5.8.3"
   }
 }

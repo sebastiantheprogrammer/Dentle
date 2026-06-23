@@ -4,10 +4,13 @@ import { cases } from "../lib/cases";
 
 type Metrics = {
   connected: boolean;
+  cronConfigured?: boolean;
+  aiConfigured?: boolean;
   missing?: string[];
   error?: string;
-  totals?: {
+    totals?: {
     views: number;
+    users: number;
     starts: number;
     guesses: number;
     solves: number;
@@ -16,8 +19,9 @@ type Metrics = {
     solveRate: number;
     subscribeRate: number;
   };
-  daily?: Array<{ day: string; views: number; guesses: number; solves: number; subscriptions: number }>;
-  boards?: Array<{ board: string; starts: number; guesses: number; solves: number }>;
+  daily?: Array<{ day: string; views: number; users: number; guesses: number; solves: number; subscriptions: number }>;
+  boards?: Array<{ board: string; starts: number; guesses: number; solves: number; fails: number; solveRate: number; averageSolveAttempts: number }>;
+  recentGuesses?: Array<{ id: string; created_at: string; board: string; category: string; attempt: number; isCorrect: boolean; guess: string }>;
   latestSubscribers?: Array<{ id: string; created_at: string; email: string }>;
   dailyCases?: Array<{ id: string; publish_date: string; source: string; status: string; cases: typeof cases; updated_at: string }>;
 };
@@ -31,9 +35,15 @@ export default function Admin() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [publishDate, setPublishDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const dailyMax = useMemo(() => maxValue((metrics?.daily || []).flatMap((day) => [day.views, day.guesses, day.solves])), [metrics]);
+  const dailyMax = useMemo(() => maxValue((metrics?.daily || []).flatMap((day) => [day.views, day.users, day.guesses, day.solves])), [metrics]);
   const boardMax = useMemo(() => maxValue((metrics?.boards || []).map((board) => board.starts)), [metrics]);
+  const todayCase = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (metrics?.dailyCases || []).find((day) => day.publish_date === today) || null;
+  }, [metrics]);
+  const subscriberEmails = useMemo(() => (metrics?.latestSubscribers || []).map((subscriber) => subscriber.email).join(", "), [metrics]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("dentle_admin_key") || "";
@@ -67,14 +77,14 @@ export default function Admin() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/admin/daily", {
+      const response = await fetch(`/api/admin/daily?date=${encodeURIComponent(publishDate)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
         body: JSON.stringify({ source: "admin-reviewed", cases })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Publish failed.");
-      setMessage("Reviewed launch boards are published for today.");
+      setMessage(`Reviewed launch boards are published for ${data.publishDate}.`);
       await loadMetrics();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Publish failed.");
@@ -88,20 +98,62 @@ export default function Admin() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/admin/daily", {
+      const response = await fetch(`/api/admin/daily?date=${encodeURIComponent(publishDate)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
         body: JSON.stringify({ source: "claude-admin" })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "AI publish failed.");
-      setMessage("Claude boards generated and published for today.");
+      setMessage(`Claude boards generated and published for ${data.publishDate}.`);
       await loadMetrics();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "AI publish failed.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function triggerDailyCron() {
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/trigger-cron?date=${encodeURIComponent(publishDate)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Cron execution failed.");
+      
+      if (data.published === false) {
+        setMessage(`Publish completed: Already published for ${data.publishDate}.`);
+      } else {
+        setMessage(`Published ${data.boards} boards for ${data.publishDate}.`);
+      }
+      await loadMetrics();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Cron execution failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copySubscriberEmails() {
+    if (!subscriberEmails) return;
+    try {
+      await navigator.clipboard.writeText(subscriberEmails);
+      setMessage("Subscriber emails copied.");
+    } catch {
+      setMessage("Could not copy emails from this browser context.");
+    }
+  }
+
+  function switchAdminKey() {
+    window.localStorage.removeItem("dentle_admin_key");
+    setMetrics(null);
+    setAdminKey("");
+    setMessage("");
   }
 
   return (
@@ -113,22 +165,29 @@ export default function Admin() {
         <header className="adminHeader">
           <div>
             <p className="eyebrow">Dentle Admin</p>
-            <h1>Daily boards and growth</h1>
+            <h1>Daily Boards and Growth</h1>
           </div>
           <a className="ghostAction adminHome" href="/">Player site</a>
         </header>
 
-        <section className="adminLogin">
-          <input
-            value={adminKey}
-            onChange={(event) => setAdminKey(event.target.value)}
-            placeholder="Admin password"
-            type="password"
-          />
-          <button className="primaryAction" type="button" onClick={() => loadMetrics()} disabled={loading || !adminKey}>
-            {loading ? "Loading" : "Open admin"}
-          </button>
-        </section>
+        {metrics?.connected ? (
+          <section className="adminLogin activeSession">
+            <strong>Admin unlocked</strong>
+            <button className="ghostAction compact" type="button" onClick={switchAdminKey}>Switch key</button>
+          </section>
+        ) : (
+          <section className="adminLogin">
+            <input
+              value={adminKey}
+              onChange={(event) => setAdminKey(event.target.value)}
+              placeholder="Admin password"
+              type="password"
+            />
+            <button className="primaryAction" type="button" onClick={() => loadMetrics()} disabled={loading || !adminKey}>
+              {loading ? "Loading" : "Open admin"}
+            </button>
+          </section>
+        )}
 
         {message && <div className="adminNotice">{message}</div>}
 
@@ -145,12 +204,33 @@ export default function Admin() {
         {metrics?.connected && metrics.totals && (
           <>
             <section className="metricGrid">
-              <article><span>Views</span><strong>{metrics.totals.views}</strong></article>
+              <article><span>Daily views</span><strong>{metrics.totals.views}</strong></article>
+              <article><span>Users</span><strong>{metrics.totals.users}</strong></article>
               <article><span>Board starts</span><strong>{metrics.totals.starts}</strong></article>
               <article><span>Guesses</span><strong>{metrics.totals.guesses}</strong></article>
               <article><span>Solves</span><strong>{metrics.totals.solves}</strong></article>
               <article><span>Subscribers</span><strong>{metrics.totals.subscribers}</strong></article>
-              <article><span>Solve rate</span><strong>{metrics.totals.solveRate}%</strong></article>
+            </section>
+
+            <section className="adminGrid">
+              <article className="adminPanel">
+                <h2>Operations</h2>
+                <div className="statusGrid">
+                  <div><span>Today</span><strong>{todayCase ? `${todayCase.cases.length} boards live` : "Fallback active"}</strong></div>
+                  <div><span>Daily cron</span><strong>{metrics.cronConfigured ? "Configured" : "Missing secret"}</strong></div>
+                  <div><span>Claude</span><strong>{metrics.aiConfigured ? "Ready" : "Missing key"}</strong></div>
+                  <div><span>Solve rate</span><strong>{metrics.totals.solveRate}%</strong></div>
+                  <div><span>Subscribe rate</span><strong>{metrics.totals.subscribeRate}%</strong></div>
+                </div>
+              </article>
+
+              <article className="adminPanel">
+                <h2>Publish date</h2>
+                <div className="dateControl">
+                  <input value={publishDate} onChange={(event) => setPublishDate(event.target.value)} type="date" />
+                  <button className="ghostAction compact" type="button" onClick={() => setPublishDate(new Date().toISOString().slice(0, 10))}>Today</button>
+                </div>
+              </article>
             </section>
 
             <section className="adminGrid">
@@ -163,6 +243,7 @@ export default function Admin() {
                   {(metrics.daily || []).map((day) => (
                     <div className="dayBars" key={day.day}>
                       <div className="barTrack"><span style={{ height: `${(day.views / dailyMax) * 100}%` }} /></div>
+                      <div className="barTrack users"><span style={{ height: `${(day.users / dailyMax) * 100}%` }} /></div>
                       <div className="barTrack guesses"><span style={{ height: `${(day.guesses / dailyMax) * 100}%` }} /></div>
                       <div className="barTrack solves"><span style={{ height: `${(day.solves / dailyMax) * 100}%` }} /></div>
                       <small>{day.day.slice(5)}</small>
@@ -171,39 +252,67 @@ export default function Admin() {
                 </div>
                 <div className="chartLegend">
                   <span><i /> views</span>
+                  <span><i /> users</span>
                   <span><i /> guesses</span>
                   <span><i /> solves</span>
                 </div>
               </article>
 
               <article className="adminPanel">
-                <h2>Board activity</h2>
+                <h2>Board performance</h2>
                 <div className="boardBars">
                   {(metrics.boards || []).map((board) => (
                     <div key={board.board}>
                       <div>
                         <strong>{board.board}</strong>
-                        <span>{board.starts} starts</span>
+                        <span>{board.solveRate}% solved</span>
                       </div>
                       <i style={{ width: `${(board.starts / boardMax) * 100}%` }} />
+                      <small>{board.starts} starts / {board.guesses} guesses / {board.fails} fails / {board.averageSolveAttempts || "-"} avg tries</small>
                     </div>
                   ))}
                 </div>
               </article>
             </section>
 
+            <section className="adminPanel">
+              <div className="panelHeader">
+                <h2>Recent guesses</h2>
+                <button className="ghostAction compact" type="button" onClick={() => loadMetrics()} disabled={loading}>Refresh</button>
+              </div>
+              {(metrics.recentGuesses || []).length ? (
+                <div className="guessList">
+                  {(metrics.recentGuesses || []).map((guess) => (
+                    <div key={guess.id}>
+                      <strong>{guess.guess || "No guess text"}</strong>
+                      <span>{guess.board}</span>
+                      <span>Try {guess.attempt || "-"}</span>
+                      <span className={guess.isCorrect ? "correct" : "miss"}>{guess.isCorrect ? "Correct" : "Miss"}</span>
+                      <time>{new Date(guess.created_at).toLocaleString()}</time>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No guess text has been captured yet. New guesses will appear here.</p>
+              )}
+            </section>
+
             <section className="adminGrid">
               <article className="adminPanel">
                 <h2>Daily question control</h2>
-                <p>Publish reviewed boards now, or let Claude generate today's five boards and save them to Supabase.</p>
+                <p>Publish reviewed boards, generate a selected date with Claude, or run the same daily publisher used by cron.</p>
                 <div className="adminActions">
                   <button className="primaryAction" type="button" onClick={publishReviewedCases} disabled={loading}>Publish reviewed</button>
-                  <button className="ghostAction" type="button" onClick={generateAndPublishAi} disabled={loading}>Generate AI today</button>
+                  <button className="ghostAction" type="button" onClick={generateAndPublishAi} disabled={loading}>Generate AI date</button>
+                  <button className="ghostAction" type="button" onClick={triggerDailyCron} disabled={loading}>Run publisher</button>
                 </div>
               </article>
 
               <article className="adminPanel">
-                <h2>Subscribers</h2>
+                <div className="panelHeader">
+                  <h2>Subscribers</h2>
+                  <button className="ghostAction compact" type="button" onClick={copySubscriberEmails} disabled={!subscriberEmails}>Copy emails</button>
+                </div>
                 {(metrics.latestSubscribers || []).length ? (
                   <div className="subscriberList">
                     {(metrics.latestSubscribers || []).map((subscriber) => (
@@ -219,8 +328,50 @@ export default function Admin() {
               </article>
             </section>
 
+            <section className="adminGrid">
+              <article className="adminPanel">
+                <h2>Cron &amp; Automation Status</h2>
+                <p>The daily pipeline generates five boards using Claude and publishes them to Supabase. Use the selected date above for controlled backfills or manual tests.</p>
+                
+                <div style={{ display: "flex", gap: "20px", margin: "16px 0", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{
+                      display: "inline-block",
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: metrics.cronConfigured ? "var(--teal)" : "var(--coral)"
+                    }} />
+                    <span style={{ fontSize: "0.9rem" }}>Cron Secret: <strong>{metrics.cronConfigured ? "Configured" : "Missing"}</strong></span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{
+                      display: "inline-block",
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: metrics.aiConfigured ? "var(--teal)" : "var(--coral)"
+                    }} />
+                    <span style={{ fontSize: "0.9rem" }}>Claude AI Key: <strong>{metrics.aiConfigured ? "Configured" : "Missing"}</strong></span>
+                  </div>
+                </div>
+              </article>
+
+              <article className="adminPanel">
+                <h2>External cron</h2>
+                <p>Dentle Daily is scheduled in cron-job.org for 12:00 PM. This panel shows whether the app is ready to accept that protected request.</p>
+                <div className="statusGrid twoColumn">
+                  <div><span>Endpoint</span><strong>/api/cron/daily</strong></div>
+                  <div><span>Secret</span><strong>{metrics.cronConfigured ? "Ready" : "Missing"}</strong></div>
+                </div>
+              </article>
+            </section>
+
             <section className="adminPanel">
-              <h2>Published days</h2>
+              <div className="panelHeader">
+                <h2>Published days</h2>
+                <button className="ghostAction compact" type="button" onClick={() => loadMetrics()} disabled={loading}>Refresh</button>
+              </div>
               <div className="publishedList">
                 {(metrics.dailyCases || []).map((day) => (
                   <div key={day.id}>
@@ -231,6 +382,21 @@ export default function Admin() {
                 ))}
               </div>
             </section>
+
+            {todayCase && (
+              <section className="adminPanel">
+                <h2>Today&apos;s board preview</h2>
+                <div className="casePreviewGrid">
+                  {todayCase.cases.map((dentalCase) => (
+                    <article key={dentalCase.id}>
+                      <span>{dentalCase.mode}</span>
+                      <strong>{dentalCase.title}</strong>
+                      <p>{dentalCase.answer}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
       </main>

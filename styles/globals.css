@@ -158,24 +158,35 @@ p {
 }
 
 .howCards article {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: center;
   padding: 18px;
+  text-align: center;
 }
 
 .howCards strong {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border-radius: 8px;
-  background: var(--teal);
-  color: white;
+  border-radius: 50%;
+  background: #e2f3ee;
+  color: var(--teal);
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  font-size: 1.25rem;
+  line-height: 1;
+  grid-row: 1 / span 2;
 }
 
 .howCards h2 {
-  margin: 16px 0 6px;
+  align-self: end;
+  margin: 0 0 6px;
 }
 
 .howCards p {
+  align-self: start;
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
@@ -273,8 +284,105 @@ p {
 
 .caseLayout {
   display: grid;
-  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+}
+
+.caseLayout .gamePanel {
+  width: min(820px, 100%);
+  margin-inline: auto;
+}
+
+.playerStats {
+  width: min(820px, 100%);
+  margin-inline: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f5f8f7;
+  padding: 24px;
+}
+
+.playerStats > h2 {
+  margin: 0 0 20px;
+  text-align: center;
+  font-size: 1.7rem;
+}
+
+.playerStatGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.playerStatGrid article {
+  display: grid;
+  min-height: 126px;
+  align-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  padding: 14px;
+  text-align: center;
+}
+
+.playerStatGrid strong {
+  color: var(--teal);
+  font-size: 2rem;
+}
+
+.playerStatGrid span {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.guessDistribution {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  padding: 20px;
+}
+
+.guessDistribution h3 {
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.distributionRow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.distributionRow > strong {
+  color: var(--teal);
+  text-align: center;
+}
+
+.distributionRow > div {
+  height: 28px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e8ecea;
+}
+
+.distributionRow span {
+  display: grid;
+  min-width: 0;
+  height: 100%;
+  place-items: center end;
+  background: var(--teal);
+  color: white;
+  padding-right: 8px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  transition: width 180ms ease;
 }
 
 .imagePanel {
@@ -640,6 +748,19 @@ p {
   margin-bottom: 14px;
 }
 
+.adminLogin.activeSession {
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+  padding: 10px;
+}
+
+.adminLogin.activeSession strong {
+  color: var(--teal);
+}
+
 .adminLogin input {
   width: min(360px, 100%);
   min-height: 50px;
@@ -719,7 +840,7 @@ p {
 
 .dayBars {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   grid-template-rows: 1fr auto;
   gap: 4px;
   align-items: end;
@@ -753,6 +874,10 @@ p {
   background: var(--gold);
 }
 
+.barTrack.users span {
+  background: var(--dark);
+}
+
 .barTrack.solves span {
   background: var(--coral);
 }
@@ -780,10 +905,14 @@ p {
 }
 
 .chartLegend span:nth-child(2) i {
-  background: var(--gold);
+  background: var(--dark);
 }
 
 .chartLegend span:nth-child(3) i {
+  background: var(--gold);
+}
+
+.chartLegend span:nth-child(4) i {
   background: var(--coral);
 }
 
@@ -814,12 +943,63 @@ p {
   font-weight: 800;
 }
 
+.boardBars small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .boardBars i {
   display: block;
   height: 10px;
   min-width: 2px;
   border-radius: 999px;
   background: var(--teal);
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.statusGrid.twoColumn {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.statusGrid div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 12px;
+}
+
+.statusGrid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.statusGrid strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1rem;
+}
+
+.dateControl {
+  display: flex;
+  gap: 8px;
+}
+
+.dateControl input {
+  min-width: 0;
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
 }
 
 .subscriberList,
@@ -847,10 +1027,75 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.guessList {
+  display: grid;
+  gap: 8px;
+}
+
+.guessList > div {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 0.8fr) 70px 80px minmax(150px, 0.8fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 10px;
+}
+
+.guessList span,
+.guessList time {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.guessList .correct {
+  color: var(--teal);
+}
+
+.guessList .miss {
+  color: #a23d31;
+}
+
+.casePreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.casePreviewGrid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 12px;
+}
+
+.casePreviewGrid span {
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.casePreviewGrid strong,
+.casePreviewGrid p {
+  display: block;
+  margin: 7px 0 0;
+}
+
+.casePreviewGrid p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 @media (max-width: 980px) {
   .howCards,
   .boardGrid,
-  .caseLayout {
+  .caseLayout,
+  .statusGrid,
+  .casePreviewGrid {
     grid-template-columns: 1fr;
   }
 
@@ -858,9 +1103,51 @@ p {
     height: 320px;
   }
 
+  .introStage {
+    align-content: start;
+    gap: 24px;
+    min-height: calc(100svh - 96px);
+    padding: clamp(28px, 5vw, 56px);
+  }
+
+  .introStage .howCards {
+    gap: 14px;
+  }
+
+  .introStage .howCards article {
+    grid-template-columns: 64px minmax(0, 1fr);
+    column-gap: 18px;
+    min-height: 132px;
+    padding: 22px 26px;
+  }
+
+  .introStage .howCards strong {
+    width: 58px;
+    height: 58px;
+    font-size: 1.55rem;
+  }
+
+  .introStage .howCards h2 {
+    margin: 0 0 6px;
+    font-size: 1.55rem;
+  }
+
+  .introStage .howCards p {
+    max-width: 620px;
+    margin-inline: auto;
+    font-size: 1.05rem;
+    line-height: 1.4;
+  }
+
+  .introStage > .primaryAction {
+    width: min(300px, 100%);
+    min-height: 62px;
+  }
+
   .metricGrid,
   .adminGrid,
-  .publishedList {
+  .publishedList,
+  .guessList > div {
     grid-template-columns: 1fr;
   }
 
@@ -918,7 +1205,9 @@ p {
 
   .introStage {
     align-content: start;
-    gap: 12px;
+    min-height: calc(100svh - 62px);
+    gap: 10px;
+    padding: 12px;
   }
 
   .eyebrow {
@@ -946,27 +1235,28 @@ p {
 
   .howCards article {
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-columns: 38px minmax(0, 1fr);
     column-gap: 10px;
-    align-items: center;
-    padding: 10px;
+    min-height: 88px;
+    padding: 12px 14px;
   }
 
   .howCards strong {
-    width: 28px;
-    height: 28px;
-    grid-row: span 2;
-    font-size: 0.85rem;
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    grid-row: 1 / span 2;
   }
 
   .howCards h2 {
-    margin: 0;
-    font-size: 1rem;
+    align-self: end;
+    margin: 0 0 2px;
+    font-size: 1.08rem;
   }
 
   .howCards p {
-    margin-top: 2px;
-    font-size: 0.84rem;
+    align-self: start;
+    font-size: 0.9rem;
     line-height: 1.3;
   }
 
@@ -977,7 +1267,8 @@ p {
 
   .introStage > .primaryAction {
     width: 100%;
-    margin-top: 2px;
+    min-height: 50px;
+    margin-top: 0;
   }
 
   .stageHeading {
@@ -1026,6 +1317,33 @@ p {
 
   .subscribeForm {
     grid-template-columns: 1fr;
+  }
+
+  .playerStats {
+    padding: 16px;
+  }
+
+  .playerStats > h2 {
+    margin-bottom: 14px;
+    font-size: 1.35rem;
+  }
+
+  .playerStatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .playerStatGrid article {
+    min-height: 100px;
+    padding: 10px;
+  }
+
+  .playerStatGrid strong {
+    font-size: 1.65rem;
+  }
+
+  .guessDistribution {
+    padding: 14px;
   }
 
   .adminShell {
