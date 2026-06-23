@@ -24,7 +24,18 @@ type Metrics = {
   recentGuesses?: Array<{ id: string; created_at: string; board: string; category: string; attempt: number; isCorrect: boolean; guess: string }>;
   latestSubscribers?: Array<{ id: string; created_at: string; email: string }>;
   dailyCases?: Array<{ id: string; publish_date: string; source: string; status: string; cases: typeof cases; updated_at: string }>;
+  cloudPlayers?: {
+    available: boolean;
+    total?: number;
+    activeSevenDays?: number;
+    completedBoards?: number;
+    winRate?: number;
+    averageWinningAttempts?: number;
+    recent?: Array<{ id: string; lastSeen: string; games: number; wins: number }>;
+  };
 };
+
+type AdminAction = "login" | "refresh" | "publish" | "generate" | "publisher" | "copy" | null;
 
 function maxValue(values: number[]) {
   return Math.max(1, ...values);
@@ -34,6 +45,8 @@ export default function Admin() {
   const [adminKey, setAdminKey] = useState("");
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState<AdminAction>(null);
+  const [justUpdated, setJustUpdated] = useState(false);
   const [message, setMessage] = useState("");
   const [publishDate, setPublishDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -51,10 +64,14 @@ export default function Admin() {
     if (saved) loadMetrics(saved);
   }, []);
 
-  async function loadMetrics(key = adminKey) {
+  async function loadMetrics(
+    key = adminKey,
+    options: { announce?: boolean; preserveMessage?: boolean; action?: AdminAction } = {}
+  ) {
     if (!key) return;
     setLoading(true);
-    setMessage("");
+    setActiveAction(options.action || (metrics?.connected ? "refresh" : "login"));
+    if (!options.preserveMessage) setMessage("");
 
     try {
       const response = await fetch("/api/admin/metrics", {
@@ -64,16 +81,21 @@ export default function Admin() {
       if (!response.ok) throw new Error(data.error || "Admin request failed.");
       window.localStorage.setItem("dentle_admin_key", key);
       setMetrics(data);
+      setJustUpdated(true);
+      window.setTimeout(() => setJustUpdated(false), 650);
+      if (options.announce) setMessage("Dashboard updated.");
     } catch (error) {
       setMetrics(null);
       setMessage(error instanceof Error ? error.message : "Could not load admin data.");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   }
 
   async function publishReviewedCases() {
     setLoading(true);
+    setActiveAction("publish");
     setMessage("");
 
     try {
@@ -85,16 +107,18 @@ export default function Admin() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Publish failed.");
       setMessage(`Reviewed launch boards are published for ${data.publishDate}.`);
-      await loadMetrics();
+      await loadMetrics(adminKey, { preserveMessage: true, action: "publish" });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Publish failed.");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   }
 
   async function generateAndPublishAi() {
     setLoading(true);
+    setActiveAction("generate");
     setMessage("");
 
     try {
@@ -106,16 +130,18 @@ export default function Admin() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "AI publish failed.");
       setMessage(`Claude boards generated and published for ${data.publishDate}.`);
-      await loadMetrics();
+      await loadMetrics(adminKey, { preserveMessage: true, action: "generate" });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "AI publish failed.");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   }
 
   async function triggerDailyCron() {
     setLoading(true);
+    setActiveAction("publisher");
     setMessage("");
 
     try {
@@ -131,21 +157,25 @@ export default function Admin() {
       } else {
         setMessage(`Published ${data.boards} boards for ${data.publishDate}.`);
       }
-      await loadMetrics();
+      await loadMetrics(adminKey, { preserveMessage: true, action: "publisher" });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Cron execution failed.");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   }
 
   async function copySubscriberEmails() {
     if (!subscriberEmails) return;
+    setActiveAction("copy");
     try {
       await navigator.clipboard.writeText(subscriberEmails);
       setMessage("Subscriber emails copied.");
     } catch {
       setMessage("Could not copy emails from this browser context.");
+    } finally {
+      window.setTimeout(() => setActiveAction(null), 800);
     }
   }
 
@@ -183,13 +213,13 @@ export default function Admin() {
               placeholder="Admin password"
               type="password"
             />
-            <button className="primaryAction" type="button" onClick={() => loadMetrics()} disabled={loading || !adminKey}>
+            <button className={`primaryAction actionFeedback${activeAction === "login" ? " isLoading" : ""}`} type="button" onClick={() => loadMetrics()} disabled={loading || !adminKey}>
               {loading ? "Loading" : "Open admin"}
             </button>
           </section>
         )}
 
-        {message && <div className="adminNotice">{message}</div>}
+        {message && <div className="adminNotice" key={message}>{message}</div>}
 
         {metrics?.connected === false && (
           <section className="adminPanel">
@@ -202,7 +232,7 @@ export default function Admin() {
         )}
 
         {metrics?.connected && metrics.totals && (
-          <>
+          <div className={justUpdated ? "adminData justUpdated" : "adminData"}>
             <section className="metricGrid">
               <article><span>Daily views</span><strong>{metrics.totals.views}</strong></article>
               <article><span>Users</span><strong>{metrics.totals.users}</strong></article>
@@ -210,6 +240,52 @@ export default function Admin() {
               <article><span>Guesses</span><strong>{metrics.totals.guesses}</strong></article>
               <article><span>Solves</span><strong>{metrics.totals.solves}</strong></article>
               <article><span>Subscribers</span><strong>{metrics.totals.subscribers}</strong></article>
+            </section>
+
+            <section className="adminPanel cloudPlayersPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Supabase players</p>
+                  <h2>Cloud Player Activity</h2>
+                </div>
+                <button
+                  className={`ghostAction compact actionFeedback${activeAction === "refresh" ? " isLoading" : ""}`}
+                  type="button"
+                  onClick={() => loadMetrics(adminKey, { announce: true, action: "refresh" })}
+                  disabled={loading}
+                >
+                  {activeAction === "refresh" ? "Refreshing" : "Refresh"}
+                </button>
+              </div>
+              {metrics.cloudPlayers?.available ? (
+                <>
+                  <div className="cloudPlayerGrid">
+                    <div><span>Cloud players</span><strong>{metrics.cloudPlayers.total || 0}</strong></div>
+                    <div><span>Active 7 days</span><strong>{metrics.cloudPlayers.activeSevenDays || 0}</strong></div>
+                    <div><span>Boards recorded</span><strong>{metrics.cloudPlayers.completedBoards || 0}</strong></div>
+                    <div><span>Cloud win rate</span><strong>{metrics.cloudPlayers.winRate || 0}%</strong></div>
+                    <div><span>Avg. winning tries</span><strong>{metrics.cloudPlayers.averageWinningAttempts || "-"}</strong></div>
+                  </div>
+                  {(metrics.cloudPlayers.recent || []).length ? (
+                    <div className="cloudPlayerList">
+                      {(metrics.cloudPlayers.recent || []).map((player) => (
+                        <div key={player.id}>
+                          <strong>Player {player.id.slice(0, 8)}</strong>
+                          <span>{player.games} games</span>
+                          <span>{player.wins} wins</span>
+                          <time>{new Date(player.lastSeen).toLocaleString()}</time>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No cloud players have completed a board yet.</p>
+                  )}
+                </>
+              ) : (
+                <div className="migrationNotice">
+                  Run <code>supabase/player-stats-migration.sql</code> to enable cloud player analytics.
+                </div>
+              )}
             </section>
 
             <section className="adminGrid">
@@ -237,7 +313,9 @@ export default function Admin() {
               <article className="adminPanel widePanel">
                 <div className="panelHeader">
                   <h2>Last 7 days</h2>
-                  <button className="ghostAction compact" type="button" onClick={() => loadMetrics()} disabled={loading}>Refresh</button>
+                  <button className={`ghostAction compact actionFeedback${activeAction === "refresh" ? " isLoading" : ""}`} type="button" onClick={() => loadMetrics(adminKey, { announce: true, action: "refresh" })} disabled={loading}>
+                    {activeAction === "refresh" ? "Refreshing" : "Refresh"}
+                  </button>
                 </div>
                 <div className="dailyChart">
                   {(metrics.daily || []).map((day) => (
@@ -278,7 +356,9 @@ export default function Admin() {
             <section className="adminPanel">
               <div className="panelHeader">
                 <h2>Recent guesses</h2>
-                <button className="ghostAction compact" type="button" onClick={() => loadMetrics()} disabled={loading}>Refresh</button>
+                <button className={`ghostAction compact actionFeedback${activeAction === "refresh" ? " isLoading" : ""}`} type="button" onClick={() => loadMetrics(adminKey, { announce: true, action: "refresh" })} disabled={loading}>
+                  {activeAction === "refresh" ? "Refreshing" : "Refresh"}
+                </button>
               </div>
               {(metrics.recentGuesses || []).length ? (
                 <div className="guessList">
@@ -302,16 +382,24 @@ export default function Admin() {
                 <h2>Daily question control</h2>
                 <p>Publish reviewed boards, generate a selected date with Claude, or run the same daily publisher used by cron.</p>
                 <div className="adminActions">
-                  <button className="primaryAction" type="button" onClick={publishReviewedCases} disabled={loading}>Publish reviewed</button>
-                  <button className="ghostAction" type="button" onClick={generateAndPublishAi} disabled={loading}>Generate AI date</button>
-                  <button className="ghostAction" type="button" onClick={triggerDailyCron} disabled={loading}>Run publisher</button>
+                  <button className={`primaryAction actionFeedback${activeAction === "publish" ? " isLoading" : ""}`} type="button" onClick={publishReviewedCases} disabled={loading}>
+                    {activeAction === "publish" ? "Publishing" : "Publish reviewed"}
+                  </button>
+                  <button className={`ghostAction actionFeedback${activeAction === "generate" ? " isLoading" : ""}`} type="button" onClick={generateAndPublishAi} disabled={loading}>
+                    {activeAction === "generate" ? "Generating" : "Generate AI date"}
+                  </button>
+                  <button className={`ghostAction actionFeedback${activeAction === "publisher" ? " isLoading" : ""}`} type="button" onClick={triggerDailyCron} disabled={loading}>
+                    {activeAction === "publisher" ? "Running" : "Run publisher"}
+                  </button>
                 </div>
               </article>
 
               <article className="adminPanel">
                 <div className="panelHeader">
                   <h2>Subscribers</h2>
-                  <button className="ghostAction compact" type="button" onClick={copySubscriberEmails} disabled={!subscriberEmails}>Copy emails</button>
+                  <button className="ghostAction compact actionFeedback" type="button" onClick={copySubscriberEmails} disabled={!subscriberEmails}>
+                    {activeAction === "copy" ? "Copied" : "Copy emails"}
+                  </button>
                 </div>
                 {(metrics.latestSubscribers || []).length ? (
                   <div className="subscriberList">
@@ -370,7 +458,9 @@ export default function Admin() {
             <section className="adminPanel">
               <div className="panelHeader">
                 <h2>Published days</h2>
-                <button className="ghostAction compact" type="button" onClick={() => loadMetrics()} disabled={loading}>Refresh</button>
+                <button className={`ghostAction compact actionFeedback${activeAction === "refresh" ? " isLoading" : ""}`} type="button" onClick={() => loadMetrics(adminKey, { announce: true, action: "refresh" })} disabled={loading}>
+                  {activeAction === "refresh" ? "Refreshing" : "Refresh"}
+                </button>
               </div>
               <div className="publishedList">
                 {(metrics.dailyCases || []).map((day) => (
@@ -397,7 +487,7 @@ export default function Admin() {
                 </div>
               </section>
             )}
-          </>
+          </div>
         )}
       </main>
     </>

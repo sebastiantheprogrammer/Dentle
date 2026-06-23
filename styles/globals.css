@@ -783,6 +783,60 @@ p {
   padding: 13px 15px;
   color: var(--teal);
   font-weight: 900;
+  animation: adminNoticeIn 280ms ease-out;
+}
+
+.adminData.justUpdated {
+  animation: adminDataRefresh 520ms ease-out;
+}
+
+.actionFeedback {
+  position: relative;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.actionFeedback:not(:disabled):active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.actionFeedback.isLoading {
+  padding-left: 42px;
+}
+
+.actionFeedback.isLoading::before {
+  position: absolute;
+  left: 17px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  content: "";
+  animation: adminSpin 650ms linear infinite;
+}
+
+@keyframes adminSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes adminNoticeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes adminDataRefresh {
+  0% {
+    opacity: 0.72;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .metricGrid {
@@ -819,6 +873,75 @@ p {
 
 .adminPanel {
   padding: 18px;
+}
+
+.cloudPlayersPanel {
+  margin-bottom: 14px;
+}
+
+.cloudPlayersPanel .panelHeader > div > h2 {
+  margin-bottom: 0;
+}
+
+.cloudPlayerGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cloudPlayerGrid > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 14px;
+}
+
+.cloudPlayerGrid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cloudPlayerGrid strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--teal);
+  font-size: 1.55rem;
+}
+
+.cloudPlayerList {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.cloudPlayerList > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 90px 80px minmax(170px, 1fr);
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding: 10px 2px 2px;
+}
+
+.cloudPlayerList span,
+.cloudPlayerList time {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.migrationNotice {
+  margin-top: 14px;
+  border: 1px solid #ead8a5;
+  border-radius: 8px;
+  background: #fff9e8;
+  color: #725714;
+  padding: 14px;
+  font-weight: 800;
 }
 
 .adminPanel h2 {
@@ -1147,11 +1270,16 @@ p {
   .metricGrid,
   .adminGrid,
   .publishedList,
-  .guessList > div {
+  .guessList > div,
+  .cloudPlayerList > div {
     grid-template-columns: 1fr;
   }
 
   .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cloudPlayerGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1365,6 +1493,10 @@ p {
 
   .metricGrid {
     gap: 8px;
+  }
+
+  .cloudPlayerGrid {
+    grid-template-columns: 1fr;
   }
 
   .metricGrid article,
