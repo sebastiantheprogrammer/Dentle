@@ -9,7 +9,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Story+Script&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Story+Script&display=swap"
           rel="stylesheet"
         />
       </Head>
