@@ -6,7 +6,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <>
       <Component {...pageProps} />
       <footer className="siteFooter">
-        <span>© 2026 Sebrium Industries</span>
+        <a href="https://sebrium.com">© 2026 Sebrium Industries</a>
         <span aria-hidden="true">|</span>
         <a href="mailto:hello@sebrium.com">hello@sebrium.com</a>
         <span aria-hidden="true">|</span>
