@@ -113,6 +113,14 @@ export function normalizeTerm(value: string) {
     .trim();
 }
 
+export function canonicalDiagnosisName(value: string) {
+  const normalized = normalizeTerm(value);
+  const diagnosis = diagnoses.find((item) =>
+    [item.name, ...item.aliases].some((term) => normalizeTerm(term) === normalized)
+  );
+  return diagnosis?.name || null;
+}
+
 export function editDistance(left: string, right: string) {
   const rows = Array.from({ length: left.length + 1 }, () => [] as number[]);
 

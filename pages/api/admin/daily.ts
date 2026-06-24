@@ -1,10 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { DentalCase } from "../../../lib/cases";
 import { describeAiIssue, generateDailyBoards, todaySeed } from "../../../lib/ai";
+import { canonicalDiagnosisName } from "../../../lib/diagnoses";
 import { getSupabaseStatus, isAdminKeyValid, supabaseRest } from "../../../lib/supabaseRest";
 
 function isCaseList(value: unknown): value is DentalCase[] {
-  return Array.isArray(value) && value.every((item) => item && typeof item === "object" && "answer" in item && "clues" in item);
+  return Array.isArray(value) && value.every((item) =>
+    item &&
+    typeof item === "object" &&
+    "answer" in item &&
+    typeof item.answer === "string" &&
+    canonicalDiagnosisName(item.answer) !== null &&
+    "clues" in item
+  );
 }
 
 async function getPublished(date: string) {
@@ -36,7 +44,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === "POST") {
       const source = typeof req.body?.source === "string" ? req.body.source : "admin";
-      const caseList = isCaseList(req.body?.cases) ? req.body.cases : await generateDailyBoards(publishDate);
+      const submittedCases = req.body?.cases;
+      if (submittedCases !== undefined && !isCaseList(submittedCases)) {
+        res.status(400).json({
+          error: "Every board answer must be an approved diagnosis. Treatments and clinical actions cannot be published as answers."
+        });
+        return;
+      }
+      const caseList = isCaseList(submittedCases) ? submittedCases : await generateDailyBoards(publishDate);
 
       const rows = await supabaseRest("dentle_daily_cases?on_conflict=publish_date", {
         method: "POST",

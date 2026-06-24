@@ -1,5 +1,5 @@
 import { cases, type DentalCase } from "./cases";
-import { diagnoses } from "./diagnoses";
+import { canonicalDiagnosisName, diagnoses } from "./diagnoses";
 
 export type GeneratedDentleCase = Omit<DentalCase, "id" | "number">;
 
@@ -56,7 +56,7 @@ Dentle is a Wordle-like daily dental diagnosis game. The image is a clue, not de
 
 Mode: ${mode}
 
-Use a diagnosis or clinical decision that belongs naturally to this mode. You may choose from this diagnosis bank or a closely related dental term:
+Choose exactly one diagnosis from this diagnosis bank:
 ${diagnosisNames}
 
 Return only valid JSON. No markdown. No commentary.
@@ -85,7 +85,9 @@ JSON shape:
 Rules:
 - prompt must be one short patient case, under 28 words.
 - clues must contain exactly 5 progressive clues.
-- answer must be specific, board-review style, and accepted by dental learners.
+- answer must be a diagnosis from the supplied diagnosis bank, using the exact canonical name.
+- answer must never be a treatment, procedure, medication, management step, recommendation, or clinical action.
+- for Treatment Plan mode, ask for the underlying diagnosis that determines treatment; do not ask what treatment to perform.
 - aliases must include common abbreviations and simpler answer variants.
 - explanation must be under 35 words.
 - differentials must contain exactly 3 tempting wrong answers.
@@ -112,7 +114,7 @@ Create exactly one board for each mode:
 - Treatment Plan
 - Emergency
 
-Use diagnoses or clinical decisions from this bank when possible:
+Every answer must use exactly one diagnosis from this bank:
 ${diagnosisNames}
 
 Return only valid JSON. No markdown. No commentary.
@@ -144,7 +146,9 @@ Each case object must include:
 Rules for every board:
 - prompt must be one short patient case, under 28 words.
 - clues must contain exactly 5 progressive clues.
-- answer must be specific, board-review style, and accepted by dental learners.
+- answer must be a diagnosis from the supplied diagnosis bank, using the exact canonical name.
+- answer must never be a treatment, procedure, medication, management step, recommendation, or clinical action.
+- Treatment Plan mode must test the diagnosis that guides treatment, never the treatment itself.
 - aliases must include common abbreviations and simpler answer variants.
 - explanation must be under 35 words.
 - differentials must contain exactly 3 tempting wrong answers.
@@ -157,6 +161,11 @@ Rules for every board:
 }
 
 function coerceCase(input: Partial<GeneratedDentleCase>, mode: string): GeneratedDentleCase {
+  const answer = canonicalDiagnosisName(input.answer || "");
+  if (!answer) {
+    throw new Error(`Generated answer is not an approved diagnosis: ${input.answer || "missing answer"}`);
+  }
+
   return {
     mode: input.mode || mode,
     category: input.category || mode,
@@ -164,7 +173,7 @@ function coerceCase(input: Partial<GeneratedDentleCase>, mode: string): Generate
     title: input.title || `${mode} Case`,
     prompt: input.prompt || "Review the image and clues, then name the most likely dental diagnosis.",
     clues: (input.clues || []).slice(0, 5).concat(Array(5).fill("Use the clinical pattern to narrow the diagnosis.")).slice(0, 5),
-    answer: input.answer || "Gingivitis",
+    answer,
     aliases: input.aliases || [],
     explanation: input.explanation || "The answer best matches the pattern of findings in the case.",
     differentials: (input.differentials || []).slice(0, 3).concat(["Periodontitis", "Pulpitis", "Caries"]).slice(0, 3),
@@ -310,7 +319,7 @@ async function callClaude(prompt: string, maxTokens = 5000) {
       model,
       max_tokens: maxTokens,
       temperature: 0.85,
-      system: "You create concise educational dental board-style game cases. Return only valid JSON. Do not include markdown.",
+      system: "You create concise educational dental diagnosis game cases. Every answer must be a diagnosis from the supplied bank, never a treatment or clinical action. Return only valid JSON. Do not include markdown.",
       messages: [
         {
           role: "user",
@@ -383,6 +392,13 @@ export function describeAiIssue(error: unknown) {
     return {
       error: "Claude rate limit or balance is temporarily exhausted.",
       nextStep: "Wait for the rate limit to reset, add credits, or use a cheaper/faster model."
+    };
+  }
+
+  if (message.includes("not an approved diagnosis")) {
+    return {
+      error: "Claude returned a treatment or an unapproved diagnosis.",
+      nextStep: "Generate again. Dentle rejected the board before publication because every answer must be an approved diagnosis."
     };
   }
 

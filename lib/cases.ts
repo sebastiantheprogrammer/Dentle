@@ -111,16 +111,16 @@ export const cases: DentalCase[] = [
     title: "Knocked-Out Incisor",
     prompt: "A 12-year-old arrives 25 minutes after a permanent maxillary central incisor was avulsed and stored in milk.",
     clues: [
-      "The tooth has a closed apex.",
+      "The permanent tooth is completely displaced from its socket.",
       "Extraoral dry time was under 60 minutes.",
       "The socket is intact.",
-      "The root should not be scrubbed.",
-      "The immediate priority is returning the tooth to the socket."
+      "This injury differs from intrusive and extrusive luxation.",
+      "The diagnosis describes complete loss of the tooth from the alveolus."
     ],
-    answer: "Replant the tooth",
-    aliases: ["immediate replantation", "reimplant the tooth", "replantation", "replant"],
-    explanation: "For a permanent avulsed tooth with short extraoral time and physiologic storage, prompt replantation is the key next step.",
-    differentials: ["Store and refer only", "Extract permanently", "Primary tooth replantation"],
+    answer: "Avulsed permanent tooth",
+    aliases: ["dental avulsion", "knocked out tooth"],
+    explanation: "Complete displacement of a permanent tooth from its socket is dental avulsion. Storage conditions and extraoral time guide treatment after diagnosis.",
+    differentials: ["Extrusive luxation", "Intrusive luxation", "Lateral luxation"],
     image: {
       src: "https://upload.wikimedia.org/wikipedia/commons/7/76/Avulsion.jpg",
       alt: "Avulsed permanent tooth displaced from its socket",
