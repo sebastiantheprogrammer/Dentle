@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { describeAiIssue, generateDentleCase, todaySeed } from "../../../lib/ai";
+import { loadDiagnosisRotation } from "../../../lib/diagnosisRotation";
 import { isAdminKeyValid } from "../../../lib/supabaseRest";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -16,7 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const mode = typeof req.body?.mode === "string" ? req.body.mode : "Dentle Dx";
     const seed = typeof req.body?.seed === "string" ? req.body.seed : todaySeed();
-    const generatedCase = await generateDentleCase(mode, seed);
+    const rotation = await loadDiagnosisRotation();
+    const generatedCase = await generateDentleCase(mode, seed, rotation.recentAnswers);
     res.status(200).json({ case: generatedCase, seed, source: "claude" });
   } catch (error) {
     console.error(error);

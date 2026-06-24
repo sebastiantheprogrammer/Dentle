@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { DentalCase } from "../../../lib/cases";
 import { describeAiIssue, generateDailyBoards, todaySeed } from "../../../lib/ai";
+import { loadDiagnosisRotation } from "../../../lib/diagnosisRotation";
 import { canonicalDiagnosisName } from "../../../lib/diagnoses";
 import { getSupabaseStatus, isAdminKeyValid, supabaseRest } from "../../../lib/supabaseRest";
 
@@ -51,7 +52,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         return;
       }
-      const caseList = isCaseList(submittedCases) ? submittedCases : await generateDailyBoards(publishDate);
+      const rotation = await loadDiagnosisRotation();
+      if (isCaseList(submittedCases)) {
+        const submittedAnswers = submittedCases.map((dentalCase) => canonicalDiagnosisName(dentalCase.answer)!);
+        if (new Set(submittedAnswers).size !== submittedAnswers.length) {
+          res.status(400).json({ error: "Every board in a daily set must have a different diagnosis." });
+          return;
+        }
+        const repeated = submittedAnswers.find((answer) => rotation.recentAnswers.includes(answer));
+        if (repeated) {
+          res.status(400).json({
+            error: `${repeated} was used recently. Choose a fresh diagnosis before publishing.`
+          });
+          return;
+        }
+      }
+      const caseList = isCaseList(submittedCases)
+        ? submittedCases
+        : await generateDailyBoards(publishDate, rotation.recentAnswers);
 
       const rows = await supabaseRest("dentle_daily_cases?on_conflict=publish_date", {
         method: "POST",

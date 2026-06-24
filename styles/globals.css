@@ -1015,6 +1015,34 @@ p {
   font-weight: 800;
 }
 
+.rotationSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.rotationSummary > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 14px;
+}
+
+.rotationSummary span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-transform: uppercase;
+}
+
+.rotationSummary strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--teal);
+  font-size: 1.65rem;
+}
+
 .adminPanel h2 {
   margin: 0 0 14px;
   font-size: 2.15rem;
@@ -1066,6 +1094,10 @@ p {
   background: var(--teal);
 }
 
+.barTrack b {
+  display: none;
+}
+
 .barTrack.guesses span {
   background: var(--gold);
 }
@@ -1110,6 +1142,83 @@ p {
 
 .chartLegend span:nth-child(4) i {
   background: var(--coral);
+}
+
+@media (min-width: 981px) {
+  .adminGrid:has(.widePanel) {
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.65fr);
+  }
+
+  .widePanel {
+    display: grid;
+    grid-template-rows: auto minmax(380px, 1fr) auto;
+    min-height: 500px;
+  }
+
+  .dailyChart {
+    position: relative;
+    min-height: 380px;
+    gap: 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(25% - 1px),
+        #dfe7e3 25%
+      ),
+      #fbfdfc;
+    padding: 24px 20px 12px;
+  }
+
+  .dayBars {
+    gap: 7px;
+  }
+
+  .barTrack {
+    height: 330px;
+    border-radius: 6px 6px 3px 3px;
+    background: rgba(221, 229, 225, 0.6);
+  }
+
+  .barTrack span {
+    border-radius: 5px 5px 2px 2px;
+    animation: chartBarGrow 420ms ease-out both;
+  }
+
+  .barTrack b {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 400;
+    transform: translateX(-50%);
+  }
+
+  .dayBars small {
+    padding-top: 6px;
+    font-size: 0.95rem;
+  }
+
+  .chartLegend {
+    justify-content: center;
+    margin-top: 16px;
+    font-size: 1rem;
+  }
+
+  @keyframes chartBarGrow {
+    from {
+      transform: scaleY(0);
+      transform-origin: bottom;
+    }
+    to {
+      transform: scaleY(1);
+      transform-origin: bottom;
+    }
+  }
 }
 
 .boardBars {
@@ -1355,6 +1464,10 @@ p {
 
   .cloudPlayerGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rotationSummary {
+    grid-template-columns: 1fr;
   }
 }
 

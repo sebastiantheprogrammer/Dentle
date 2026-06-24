@@ -33,6 +33,12 @@ type Metrics = {
     averageWinningAttempts?: number;
     recent?: Array<{ id: string; lastSeen: string; games: number; wins: number }>;
   };
+  diagnosisRotation?: {
+    bankSize: number;
+    recentAnswers: string[];
+    availableAnswers: string[];
+    recentLimit: number;
+  };
 };
 
 type AdminAction = "login" | "refresh" | "publish" | "generate" | "publisher" | "copy" | null;
@@ -295,6 +301,8 @@ export default function Admin() {
                   <div><span>Today</span><strong>{todayCase ? `${todayCase.cases.length} boards live` : "Fallback active"}</strong></div>
                   <div><span>Daily cron</span><strong>{metrics.cronConfigured ? "Configured" : "Missing secret"}</strong></div>
                   <div><span>Claude</span><strong>{metrics.aiConfigured ? "Ready" : "Missing key"}</strong></div>
+                  <div><span>Diagnosis bank</span><strong>{metrics.diagnosisRotation?.bankSize || 0}</strong></div>
+                  <div><span>Fresh answers</span><strong>{metrics.diagnosisRotation?.availableAnswers.length || 0}</strong></div>
                   <div><span>Solve rate</span><strong>{metrics.totals.solveRate}%</strong></div>
                   <div><span>Subscribe rate</span><strong>{metrics.totals.subscribeRate}%</strong></div>
                 </div>
@@ -309,6 +317,25 @@ export default function Admin() {
               </article>
             </section>
 
+            <section className="adminPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Answer rotation</p>
+                  <h2>Diagnosis Pool</h2>
+                </div>
+                <strong>{metrics.diagnosisRotation?.availableAnswers.length || 0} fresh</strong>
+              </div>
+              <p>
+                Dentle excludes the latest {metrics.diagnosisRotation?.recentLimit || 60} unique published diagnoses.
+                Older answers return automatically only after they leave the recent rotation.
+              </p>
+              <div className="rotationSummary">
+                <div><span>Approved diagnoses</span><strong>{metrics.diagnosisRotation?.bankSize || 0}</strong></div>
+                <div><span>Recently blocked</span><strong>{metrics.diagnosisRotation?.recentAnswers.length || 0}</strong></div>
+                <div><span>Available now</span><strong>{metrics.diagnosisRotation?.availableAnswers.length || 0}</strong></div>
+              </div>
+            </section>
+
             <section className="adminGrid">
               <article className="adminPanel widePanel">
                 <div className="panelHeader">
@@ -320,10 +347,18 @@ export default function Admin() {
                 <div className="dailyChart">
                   {(metrics.daily || []).map((day) => (
                     <div className="dayBars" key={day.day}>
-                      <div className="barTrack"><span style={{ height: `${(day.views / dailyMax) * 100}%` }} /></div>
-                      <div className="barTrack users"><span style={{ height: `${(day.users / dailyMax) * 100}%` }} /></div>
-                      <div className="barTrack guesses"><span style={{ height: `${(day.guesses / dailyMax) * 100}%` }} /></div>
-                      <div className="barTrack solves"><span style={{ height: `${(day.solves / dailyMax) * 100}%` }} /></div>
+                      <div className="barTrack">
+                        <span style={{ height: `${(day.views / dailyMax) * 100}%` }}><b>{day.views}</b></span>
+                      </div>
+                      <div className="barTrack users">
+                        <span style={{ height: `${(day.users / dailyMax) * 100}%` }}><b>{day.users}</b></span>
+                      </div>
+                      <div className="barTrack guesses">
+                        <span style={{ height: `${(day.guesses / dailyMax) * 100}%` }}><b>{day.guesses}</b></span>
+                      </div>
+                      <div className="barTrack solves">
+                        <span style={{ height: `${(day.solves / dailyMax) * 100}%` }}><b>{day.solves}</b></span>
+                      </div>
                       <small>{day.day.slice(5)}</small>
                     </div>
                   ))}

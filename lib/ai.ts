@@ -46,8 +46,12 @@ export function todaySeed(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
-export function casePrompt(mode: string, seed = todaySeed()) {
-  const diagnosisNames = diagnoses.map((diagnosis) => diagnosis.name).slice(0, 90).join(", ");
+export function casePrompt(mode: string, seed = todaySeed(), excludedAnswers: string[] = []) {
+  const excluded = new Set(excludedAnswers);
+  const diagnosisNames = diagnoses
+    .map((diagnosis) => diagnosis.name)
+    .filter((name) => !excluded.has(name))
+    .join(", ");
 
   return `
 Create one Dentle board for ${seed}.
@@ -86,6 +90,7 @@ Rules:
 - prompt must be one short patient case, under 28 words.
 - clues must contain exactly 5 progressive clues.
 - answer must be a diagnosis from the supplied diagnosis bank, using the exact canonical name.
+- do not use any diagnosis that is absent from the supplied bank.
 - answer must never be a treatment, procedure, medication, management step, recommendation, or clinical action.
 - for Treatment Plan mode, ask for the underlying diagnosis that determines treatment; do not ask what treatment to perform.
 - aliases must include common abbreviations and simpler answer variants.
@@ -99,8 +104,12 @@ Rules:
 `;
 }
 
-export function dailyBoardsPrompt(seed = todaySeed()) {
-  const diagnosisNames = diagnoses.map((diagnosis) => diagnosis.name).slice(0, 120).join(", ");
+export function dailyBoardsPrompt(seed = todaySeed(), excludedAnswers: string[] = []) {
+  const excluded = new Set(excludedAnswers);
+  const diagnosisNames = diagnoses
+    .map((diagnosis) => diagnosis.name)
+    .filter((name) => !excluded.has(name))
+    .join(", ");
 
   return `
 Create five Dentle boards for ${seed}.
@@ -147,6 +156,8 @@ Rules for every board:
 - prompt must be one short patient case, under 28 words.
 - clues must contain exactly 5 progressive clues.
 - answer must be a diagnosis from the supplied diagnosis bank, using the exact canonical name.
+- all five answers must be different from one another.
+- do not use any diagnosis that is absent from the supplied bank.
 - answer must never be a treatment, procedure, medication, management step, recommendation, or clinical action.
 - Treatment Plan mode must test the diagnosis that guides treatment, never the treatment itself.
 - aliases must include common abbreviations and simpler answer variants.
@@ -160,10 +171,17 @@ Rules for every board:
 `;
 }
 
-function coerceCase(input: Partial<GeneratedDentleCase>, mode: string): GeneratedDentleCase {
+function coerceCase(
+  input: Partial<GeneratedDentleCase>,
+  mode: string,
+  excludedAnswers: Set<string> = new Set()
+): GeneratedDentleCase {
   const answer = canonicalDiagnosisName(input.answer || "");
   if (!answer) {
     throw new Error(`Generated answer is not an approved diagnosis: ${input.answer || "missing answer"}`);
+  }
+  if (excludedAnswers.has(answer)) {
+    throw new Error(`Generated answer repeats a recent diagnosis: ${answer}`);
   }
 
   return {
@@ -347,21 +365,45 @@ async function callClaude(prompt: string, maxTokens = 5000) {
   return extractJson(text);
 }
 
-export async function generateDentleCase(mode: string, seed = todaySeed()) {
-  return withFreshImage(coerceCase(await callClaude(casePrompt(mode, seed), 2500), mode), seed);
+export async function generateDentleCase(mode: string, seed = todaySeed(), excludedAnswers: string[] = []) {
+  return withFreshImage(
+    coerceCase(await callClaude(casePrompt(mode, seed, excludedAnswers), 2500), mode, new Set(excludedAnswers)),
+    seed
+  );
 }
 
-export async function generateDailyBoards(seed = todaySeed()) {
+export async function generateDailyBoards(seed = todaySeed(), excludedAnswers: string[] = []) {
   const modes = ["Dentle Dx", "Radiograph", "Oral Path", "Treatment Plan", "Emergency"];
-  const parsed = await callClaude(dailyBoardsPrompt(seed), 7000);
-  const generated = modes.map((mode, index) => coerceCase(parsed.cases?.[index] || {}, mode));
-  const withImages = await Promise.all(generated.map((dentalCase) => withFreshImage(dentalCase, seed)));
+  const excluded = new Set(excludedAnswers);
+  let lastError: unknown;
 
-  return withImages.map((board, index) => ({
-    ...board,
-    id: `ai-${seed}-${index + 1}`,
-    number: String(index + 1)
-  }));
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const parsed = await callClaude(dailyBoardsPrompt(seed, excludedAnswers), 7000);
+      const generated = modes.map((mode, index) => coerceCase(parsed.cases?.[index] || {}, mode, excluded));
+      const answers = generated.map((dentalCase) => dentalCase.answer);
+      if (new Set(answers).size !== answers.length) {
+        throw new Error("Generated boards contain duplicate diagnoses.");
+      }
+      const withImages = await Promise.all(generated.map((dentalCase) => withFreshImage(dentalCase, seed)));
+
+      return withImages.map((board, index) => ({
+        ...board,
+        id: `ai-${seed}-${index + 1}`,
+        number: String(index + 1)
+      }));
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : "";
+      const canRetry =
+        message.includes("not an approved diagnosis") ||
+        message.includes("repeats a recent diagnosis") ||
+        message.includes("duplicate diagnoses");
+      if (!canRetry) throw error;
+    }
+  }
+
+  throw lastError || new Error("Could not generate a unique diagnosis batch.");
 }
 
 export function describeAiIssue(error: unknown) {
@@ -395,10 +437,14 @@ export function describeAiIssue(error: unknown) {
     };
   }
 
-  if (message.includes("not an approved diagnosis")) {
+  if (
+    message.includes("not an approved diagnosis") ||
+    message.includes("repeats a recent diagnosis") ||
+    message.includes("duplicate diagnoses")
+  ) {
     return {
-      error: "Claude returned a treatment or an unapproved diagnosis.",
-      nextStep: "Generate again. Dentle rejected the board before publication because every answer must be an approved diagnosis."
+      error: "Claude returned an invalid or recently used diagnosis.",
+      nextStep: "Generate again. Dentle rejected the batch to protect diagnosis quality and answer rotation."
     };
   }
 

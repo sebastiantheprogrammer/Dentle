@@ -1,5 +1,6 @@
 import type { DentalCase } from "./cases";
 import { describeAiIssue, generateDailyBoards } from "./ai";
+import { loadDiagnosisRotation } from "./diagnosisRotation";
 import { getSupabaseStatus, supabaseRest } from "./supabaseRest";
 
 export async function publishDailyBoards(publishDate: string, source = "claude-cron") {
@@ -23,7 +24,8 @@ export async function publishDailyBoards(publishDate: string, source = "claude-c
       };
     }
 
-    const generated = await generateDailyBoards(publishDate);
+    const rotation = await loadDiagnosisRotation();
+    const generated = await generateDailyBoards(publishDate, rotation.recentAnswers);
     await supabaseRest("dentle_daily_cases?on_conflict=publish_date", {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
@@ -38,7 +40,13 @@ export async function publishDailyBoards(publishDate: string, source = "claude-c
 
     return {
       status: 200,
-      body: { published: true, publishDate, boards: generated.length }
+      body: {
+        published: true,
+        publishDate,
+        boards: generated.length,
+        diagnosisBank: rotation.bankSize,
+        recentDiagnosesSkipped: rotation.recentAnswers.length
+      }
     };
   } catch (error) {
     console.error(error);

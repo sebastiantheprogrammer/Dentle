@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { buildMetrics, type DailyCaseRecord, type DentleEvent, type Subscriber } from "../../../lib/adminMetrics";
+import { diagnosisRotation } from "../../../lib/diagnosisRotation";
 import { getSupabaseStatus, isAdminKeyValid, supabaseRest } from "../../../lib/supabaseRest";
 
 type CloudPlayer = {
@@ -96,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cronConfigured: !!process.env.CRON_SECRET,
       aiConfigured: !!process.env.ANTHROPIC_API_KEY,
       cloudPlayers,
+      diagnosisRotation: diagnosisRotation(dailyCases),
       ...buildMetrics(events, subscribers, dailyCases)
     });
   } catch (error) {
