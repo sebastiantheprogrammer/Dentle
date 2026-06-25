@@ -52,9 +52,34 @@ type Metrics = {
     availableAnswers: string[];
     recentLimit: number;
   };
+  caseReports?: {
+    available: boolean;
+    threshold?: number;
+    total?: number;
+    pending?: number;
+    needsReview?: number;
+    queue?: Array<{
+      caseId: string;
+      boardDate: string;
+      status: string;
+      reportCount: number;
+      lastReportedAt: string | null;
+      snapshot: Record<string, unknown>;
+      reports: Array<{ id: string; reason: string; details: string | null; createdAt: string }>;
+    }>;
+    recent?: Array<{
+      id: string;
+      caseId: string;
+      boardDate: string;
+      reason: string;
+      details: string | null;
+      createdAt: string;
+      snapshot: Record<string, unknown>;
+    }>;
+  };
 };
 
-type AdminAction = "login" | "refresh" | "publish" | "generate" | "publisher" | "copy" | null;
+type AdminAction = "login" | "refresh" | "publish" | "generate" | "publisher" | "copy" | "moderation" | null;
 
 function maxValue(values: number[]) {
   return Math.max(1, ...values);
@@ -66,6 +91,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [activeAction, setActiveAction] = useState<AdminAction>(null);
   const [justUpdated, setJustUpdated] = useState(false);
+  const [moderatingCase, setModeratingCase] = useState("");
   const [message, setMessage] = useState("");
   const [publishDate, setPublishDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -195,6 +221,37 @@ export default function Admin() {
       setMessage("Could not copy emails from this browser context.");
     } finally {
       window.setTimeout(() => setActiveAction(null), 800);
+    }
+  }
+
+  async function moderateCase(caseId: string, action: "approve" | "block" | "dismiss") {
+    setLoading(true);
+    setActiveAction("moderation");
+    setModeratingCase(caseId);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/admin/case-moderation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ caseId, action })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Moderation update failed.");
+      setMessage(
+        action === "approve"
+          ? "Case marked clinically reviewed."
+          : action === "block"
+            ? "Case blocked and removed from the daily rotation."
+            : "Reports dismissed."
+      );
+      await loadMetrics(adminKey, { preserveMessage: true, action: "moderation" });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Moderation update failed.");
+    } finally {
+      setLoading(false);
+      setActiveAction(null);
+      setModeratingCase("");
     }
   }
 
@@ -350,6 +407,97 @@ export default function Admin() {
                 <div><span>Recently blocked</span><strong>{metrics.diagnosisRotation?.recentAnswers.length || 0}</strong></div>
                 <div><span>Available now</span><strong>{metrics.diagnosisRotation?.availableAnswers.length || 0}</strong></div>
               </div>
+            </section>
+
+            <section className="adminPanel moderationPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Community reports</p>
+                  <h2>Case Review Queue</h2>
+                </div>
+                {metrics.caseReports?.available && (
+                  <div className="moderationCounts">
+                    <span>{metrics.caseReports.pending || 0} pending</span>
+                    <span className="needsReview">{metrics.caseReports.needsReview || 0} needs review</span>
+                  </div>
+                )}
+              </div>
+
+              {!metrics.caseReports?.available ? (
+                <div className="migrationNotice">
+                  Run <code>supabase/case-reports-migration.sql</code> to enable player case reports.
+                </div>
+              ) : (metrics.caseReports.queue || []).length ? (
+                <div className="moderationQueue">
+                  {(metrics.caseReports.queue || []).map((item) => (
+                    <article className={item.status === "needs_review" ? "needsReview" : ""} key={item.caseId}>
+                      <div className="moderationCaseHeader">
+                        <div>
+                          <span className="moderationStatus">
+                            {item.status === "needs_review" ? "Needs Review" : "Pending"}
+                          </span>
+                          <h3>{String(item.snapshot.title || item.caseId)}</h3>
+                          <p>{String(item.snapshot.answer || "Answer unavailable")} · {item.boardDate}</p>
+                        </div>
+                        <strong>{item.reportCount} report{item.reportCount === 1 ? "" : "s"}</strong>
+                      </div>
+                      <div className="moderationReasons">
+                        {item.reports.map((report) => (
+                          <div key={report.id}>
+                            <strong>{report.reason.replaceAll("_", " ")}</strong>
+                            {report.details && <p>{report.details}</p>}
+                            <time>{new Date(report.createdAt).toLocaleString()}</time>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="moderationActions">
+                        <button
+                          className="primaryAction actionFeedback"
+                          type="button"
+                          onClick={() => moderateCase(item.caseId, "approve")}
+                          disabled={loading}
+                        >
+                          {moderatingCase === item.caseId && activeAction === "moderation" ? "Updating" : "Mark reviewed"}
+                        </button>
+                        <button
+                          className="ghostAction"
+                          type="button"
+                          onClick={() => moderateCase(item.caseId, "block")}
+                          disabled={loading}
+                        >
+                          Keep blocked
+                        </button>
+                        <button
+                          className="ghostAction"
+                          type="button"
+                          onClick={() => moderateCase(item.caseId, "dismiss")}
+                          disabled={loading}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p>No cases are waiting for review.</p>
+              )}
+
+              {metrics.caseReports?.available && (metrics.caseReports.recent || []).length > 0 && (
+                <details className="reportHistory">
+                  <summary>Recent report history ({metrics.caseReports.total || 0})</summary>
+                  <div>
+                    {(metrics.caseReports.recent || []).map((report) => (
+                      <article key={report.id}>
+                        <strong>{String(report.snapshot.title || report.caseId)}</strong>
+                        <span>{report.reason.replaceAll("_", " ")}</span>
+                        <span>{report.boardDate}</span>
+                        {report.details && <p>{report.details}</p>}
+                      </article>
+                    ))}
+                  </div>
+                </details>
+              )}
             </section>
 
             <section className="adminGrid">

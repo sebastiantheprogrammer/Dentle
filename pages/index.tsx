@@ -11,6 +11,16 @@ type ApiDiagnosis = {
   category: string;
 };
 type SubscribeState = "idle" | "saving" | "saved" | "error";
+type ReportState = "idle" | "saving" | "saved" | "error";
+type ReportReason =
+  | "incorrect_diagnosis"
+  | "radiograph_mismatch"
+  | "inconsistent_clues"
+  | "answer_should_be_accepted"
+  | "wrong_image"
+  | "too_easy"
+  | "too_hard"
+  | "other";
 type PlayerStats = {
   gamesPlayed: number;
   wins: number;
@@ -30,6 +40,17 @@ const emptyPlayerStats: PlayerStats = {
   completedBoards: {},
   winDates: []
 };
+
+const reportReasons: Array<{ value: ReportReason; label: string }> = [
+  { value: "incorrect_diagnosis", label: "Incorrect diagnosis" },
+  { value: "radiograph_mismatch", label: "Radiograph doesn't match the case" },
+  { value: "inconsistent_clues", label: "Clues are inconsistent" },
+  { value: "answer_should_be_accepted", label: "Answer should be accepted" },
+  { value: "wrong_image", label: "Image is wrong" },
+  { value: "too_easy", label: "Too easy" },
+  { value: "too_hard", label: "Too hard" },
+  { value: "other", label: "Other" }
+];
 
 function ToothIcon() {
   return (
@@ -149,6 +170,11 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle");
   const [subscribeError, setSubscribeError] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReason | "">("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportState, setReportState] = useState<ReportState>("idle");
+  const [reportMessage, setReportMessage] = useState("");
   const [playerStats, setPlayerStats] = useState<PlayerStats>(emptyPlayerStats);
   const selectedCase = dailyCases.find((dentalCase) => dentalCase.id === selectedId) || dailyCases[0] || cases[0];
   const localSuggestions = useMemo(() => getSuggestions(guess), [guess]);
@@ -262,6 +288,11 @@ export default function Home() {
     setSolved(false);
     setSubscribeOpen(false);
     setSubscribeState("idle");
+    setReportOpen(false);
+    setReportReason("");
+    setReportDetails("");
+    setReportState("idle");
+    setReportMessage("");
   }
 
   function recordCompletedBoard(dentalCase: DentalCase, wasSolved: boolean, attemptNumber: number) {
@@ -411,6 +442,42 @@ export default function Home() {
     trackEvent("subscribe_prompt_view", selectedCase);
   }
 
+  async function submitCaseReport() {
+    if (!reportReason || (reportReason === "other" && !reportDetails.trim())) return;
+    setReportState("saving");
+    setReportMessage("");
+
+    try {
+      const response = await fetch("/api/case-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId: visitorId(),
+          caseId: selectedCase.id,
+          boardDate: new Date().toISOString().slice(0, 10),
+          reason: reportReason,
+          details: reportDetails,
+          caseSnapshot: {
+            mode: selectedCase.mode,
+            category: selectedCase.category,
+            title: selectedCase.title,
+            prompt: selectedCase.prompt,
+            answer: selectedCase.answer,
+            aliases: selectedCase.aliases,
+            clues: selectedCase.clues
+          }
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not submit report.");
+      setReportState("saved");
+      setReportMessage(data.message || "Thanks. Your report was submitted.");
+    } catch (error) {
+      setReportState("error");
+      setReportMessage(error instanceof Error ? error.message : "Could not submit report.");
+    }
+  }
+
   return (
     <>
       <Head>
@@ -499,6 +566,11 @@ export default function Home() {
           <div className="caseLayout">
             <article className="gamePanel">
               <p className="eyebrow">{selectedCase.category}</p>
+              <span className={`reviewBadge ${selectedCase.reviewStatus === "clinically_reviewed" ? "reviewed" : "pending"}`}>
+                {selectedCase.reviewStatus === "clinically_reviewed"
+                  ? "Clinically reviewed"
+                  : "Community review pending"}
+              </span>
               <h1 id="case-title">{selectedCase.title}</h1>
               <p className="prompt">{selectedCase.prompt}</p>
 
@@ -573,6 +645,9 @@ export default function Home() {
                     </button>
                   )}
                   <button className="ghostAction" type="button" onClick={resetGame}>Play again</button>
+                  <button className="flagCaseAction" type="button" onClick={() => setReportOpen(true)}>
+                    Flag this case
+                  </button>
                 </div>
               )}
             </article>
@@ -639,6 +714,54 @@ export default function Home() {
               </div>
             )}
             {subscribeState === "error" && <p className="formError">{subscribeError || "Could not subscribe yet."}</p>}
+          </section>
+        </div>
+      )}
+      {reportOpen && (
+        <div className="modalOverlay" role="presentation">
+          <section className="reportModal" role="dialog" aria-modal="true" aria-labelledby="report-title">
+            <button className="modalClose" type="button" onClick={() => setReportOpen(false)} aria-label="Close">x</button>
+            <p className="eyebrow">Case feedback</p>
+            <h2 id="report-title">Flag this case</h2>
+            <p>Tell us what needs review. Reports help remove inaccurate cases quickly.</p>
+
+            {reportState === "saved" ? (
+              <div className="subscribeSuccess">{reportMessage}</div>
+            ) : (
+              <>
+                <div className="reportReasons">
+                  {reportReasons.map((reason) => (
+                    <label key={reason.value}>
+                      <input
+                        type="radio"
+                        name="report-reason"
+                        value={reason.value}
+                        checked={reportReason === reason.value}
+                        onChange={() => setReportReason(reason.value)}
+                      />
+                      <span>{reason.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {reportReason === "other" && (
+                  <textarea
+                    value={reportDetails}
+                    onChange={(event) => setReportDetails(event.target.value)}
+                    maxLength={1000}
+                    placeholder="Describe what seems wrong"
+                  />
+                )}
+                <button
+                  className="primaryAction reportSubmit"
+                  type="button"
+                  onClick={submitCaseReport}
+                  disabled={!reportReason || reportState === "saving" || (reportReason === "other" && !reportDetails.trim())}
+                >
+                  {reportState === "saving" ? "Submitting" : "Submit report"}
+                </button>
+              </>
+            )}
+            {reportState === "error" && <p className="formError">{reportMessage}</p>}
           </section>
         </div>
       )}

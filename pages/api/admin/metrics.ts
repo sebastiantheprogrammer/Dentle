@@ -16,6 +16,26 @@ type CloudResult = {
   created_at: string;
 };
 
+type CaseReport = {
+  id: string;
+  created_at: string;
+  case_id: string;
+  board_date: string;
+  review_cycle: number;
+  reason: string;
+  details: string | null;
+  case_snapshot: Record<string, unknown>;
+};
+
+type CaseModeration = {
+  case_id: string;
+  board_date: string;
+  review_cycle: number;
+  status: "pending" | "needs_review" | "reviewed" | "dismissed";
+  report_count: number;
+  last_reported_at: string | null;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!isAdminKeyValid(req.headers["x-admin-key"] as string | undefined)) {
     res.status(401).json({ error: "Admin password required." });
@@ -97,11 +117,95 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Player statistics are optional until the additive migration is run.
     }
 
+    let caseReports:
+      | {
+          available: true;
+          threshold: number;
+          total: number;
+          pending: number;
+          needsReview: number;
+          queue: Array<{
+            caseId: string;
+            boardDate: string;
+            status: string;
+            reportCount: number;
+            lastReportedAt: string | null;
+            snapshot: Record<string, unknown>;
+            reports: Array<{
+              id: string;
+              reason: string;
+              details: string | null;
+              createdAt: string;
+            }>;
+          }>;
+          recent: Array<{
+            id: string;
+            caseId: string;
+            boardDate: string;
+            reason: string;
+            details: string | null;
+            createdAt: string;
+            snapshot: Record<string, unknown>;
+          }>;
+        }
+      | { available: false } = { available: false };
+
+    try {
+      const [reports, moderation] = await Promise.all([
+        supabaseRest<CaseReport[]>(
+          "dentle_case_reports?select=id,created_at,case_id,board_date,review_cycle,reason,details,case_snapshot&order=created_at.desc&limit=500"
+        ),
+        supabaseRest<CaseModeration[]>(
+          "dentle_case_moderation?select=case_id,board_date,review_cycle,status,report_count,last_reported_at&order=last_reported_at.desc&limit=500"
+        )
+      ]);
+      const queueRows = moderation.filter((row) => row.status === "pending" || row.status === "needs_review");
+
+      caseReports = {
+        available: true,
+        threshold: 3,
+        total: reports.length,
+        pending: queueRows.filter((row) => row.status === "pending").length,
+        needsReview: queueRows.filter((row) => row.status === "needs_review").length,
+        queue: queueRows.map((row) => {
+          const matching = reports.filter((report) =>
+            report.case_id === row.case_id && report.review_cycle === row.review_cycle
+          );
+          return {
+            caseId: row.case_id,
+            boardDate: row.board_date,
+            status: row.status,
+            reportCount: row.report_count,
+            lastReportedAt: row.last_reported_at,
+            snapshot: matching[0]?.case_snapshot || {},
+            reports: matching.map((report) => ({
+              id: report.id,
+              reason: report.reason,
+              details: report.details,
+              createdAt: report.created_at
+            }))
+          };
+        }),
+        recent: reports.slice(0, 50).map((report) => ({
+          id: report.id,
+          caseId: report.case_id,
+          boardDate: report.board_date,
+          reason: report.reason,
+          details: report.details,
+          createdAt: report.created_at,
+          snapshot: report.case_snapshot
+        }))
+      };
+    } catch {
+      // Case moderation is optional until its additive migration is run.
+    }
+
     res.status(200).json({
       connected: true,
       cronConfigured: !!process.env.CRON_SECRET,
       aiConfigured: !!process.env.ANTHROPIC_API_KEY,
       cloudPlayers,
+      caseReports,
       diagnosisRotation: diagnosisRotation(dailyCases),
       ...buildMetrics(events, subscribers, dailyCases)
     });

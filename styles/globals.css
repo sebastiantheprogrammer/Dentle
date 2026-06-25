@@ -519,6 +519,27 @@ p {
   line-height: 0.95;
 }
 
+.reviewBadge {
+  display: inline-flex;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 0.82rem;
+}
+
+.reviewBadge.reviewed {
+  border-color: #9ed7c8;
+  background: #eef8f5;
+  color: var(--teal);
+}
+
+.reviewBadge.pending {
+  border-color: #ead8a5;
+  background: #fff9e8;
+  color: #725714;
+}
+
 .prompt {
   margin: 18px 0;
   border-left: 4px solid var(--teal);
@@ -679,6 +700,17 @@ p {
   margin: 0 8px 0 0;
 }
 
+.flagCaseAction {
+  display: block;
+  margin-top: 14px;
+  border: 0;
+  background: transparent;
+  color: #9b3d34;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -713,6 +745,71 @@ p {
   background: white;
   box-shadow: var(--shadow);
   padding: 24px;
+}
+
+.reportModal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(760px, calc(100svh - 36px));
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.reportModal h2 {
+  margin: 0;
+  font-size: 2.3rem;
+}
+
+.reportModal > p:not(.eyebrow, .formError) {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.reportReasons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.reportReasons label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.reportReasons label:has(input:checked) {
+  border-color: var(--teal);
+  background: #eef8f5;
+}
+
+.reportReasons input {
+  accent-color: var(--teal);
+}
+
+.reportModal textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  font: inherit;
+}
+
+.reportSubmit {
+  width: 100%;
+  margin-top: 12px;
 }
 
 .modalClose {
@@ -1013,6 +1110,134 @@ p {
   color: #725714;
   padding: 14px;
   font-weight: 800;
+}
+
+.moderationCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.moderationCounts span,
+.moderationStatus {
+  border-radius: 999px;
+  background: #fff9e8;
+  color: #725714;
+  padding: 6px 9px;
+  font-size: 0.86rem;
+}
+
+.moderationCounts .needsReview,
+.moderationStatus.needsReview {
+  background: #fff0ed;
+  color: #9b3d34;
+}
+
+.moderationQueue {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.moderationQueue > article {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--gold);
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 16px;
+}
+
+.moderationQueue > article.needsReview {
+  border-left-color: var(--coral);
+  background: #fffafa;
+}
+
+.moderationQueue > article.needsReview .moderationStatus {
+  background: #fff0ed;
+  color: #9b3d34;
+}
+
+.moderationCaseHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.moderationCaseHeader h3 {
+  margin: 8px 0 2px;
+  font-size: 1.6rem;
+}
+
+.moderationCaseHeader p {
+  margin: 0;
+}
+
+.moderationReasons {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.moderationReasons > div {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.moderationReasons strong {
+  text-transform: capitalize;
+}
+
+.moderationReasons p {
+  margin: 4px 0;
+}
+
+.moderationReasons time {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.moderationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.reportHistory {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.reportHistory summary {
+  cursor: pointer;
+  color: var(--teal);
+}
+
+.reportHistory > div {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reportHistory article {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.8fr) 100px;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.reportHistory article span {
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.reportHistory article p {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .rotationSummary {
@@ -1632,6 +1857,32 @@ p {
 
   .subscribeForm {
     grid-template-columns: 1fr;
+  }
+
+  .reportModal {
+    padding: 18px;
+  }
+
+  .reportReasons {
+    grid-template-columns: 1fr;
+  }
+
+  .moderationCaseHeader,
+  .moderationActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .moderationActions button {
+    width: 100%;
+  }
+
+  .reportHistory article {
+    grid-template-columns: 1fr;
+  }
+
+  .reportHistory article p {
+    grid-column: auto;
   }
 
   .playerStats {

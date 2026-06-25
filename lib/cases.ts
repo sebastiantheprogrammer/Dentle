@@ -11,6 +11,7 @@ export type DentalCase = {
   aliases: string[];
   explanation: string;
   differentials: string[];
+  reviewStatus?: "clinically_reviewed" | "community_review_pending";
   image: {
     src: string;
     alt: string;
