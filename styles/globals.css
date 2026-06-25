@@ -902,7 +902,7 @@ p {
 
 .metricGrid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 14px;
   margin: 0;
 }
@@ -955,7 +955,7 @@ p {
 
 .cloudPlayerGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
   gap: 12px;
   margin-top: 18px;
 }
@@ -1340,7 +1340,7 @@ p {
 
 .guessList > div {
   display: grid;
-  grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 0.8fr) 70px 80px minmax(150px, 0.8fr);
+  grid-template-columns: minmax(150px, 1.2fr) minmax(110px, 0.8fr) minmax(110px, 0.8fr) 70px 80px minmax(150px, 0.8fr);
   gap: 10px;
   align-items: center;
   border: 1px solid var(--line);

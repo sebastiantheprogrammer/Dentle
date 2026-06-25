@@ -46,7 +46,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           available: true;
           total: number;
           activeSevenDays: number;
+          activeToday: number;
           completedBoards: number;
+          completedToday: number;
           winRate: number;
           averageWinningAttempts: number;
           recent: Array<{ id: string; lastSeen: string; games: number; wins: number }>;
@@ -64,6 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+      const today = new Date().toISOString().slice(0, 10);
       const wins = results.filter((result) => result.solved);
       const gamesByPlayer = results.reduce<Record<string, { games: number; wins: number }>>((acc, result) => {
         if (!acc[result.player_id]) acc[result.player_id] = { games: 0, wins: 0 };
@@ -76,7 +79,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         available: true,
         total: players.length,
         activeSevenDays: players.filter((player) => new Date(player.last_seen_at) >= sevenDaysAgo).length,
+        activeToday: players.filter((player) => player.last_seen_at.startsWith(today)).length,
         completedBoards: results.length,
+        completedToday: results.filter((result) => result.created_at.startsWith(today)).length,
         winRate: results.length ? Math.round((wins.length / results.length) * 100) : 0,
         averageWinningAttempts: wins.length
           ? Number((wins.reduce((total, result) => total + (result.attempt_number || 0), 0) / wins.length).toFixed(1))

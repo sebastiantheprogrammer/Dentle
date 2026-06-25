@@ -34,6 +34,7 @@ function dayKey(date: Date) {
 }
 
 export function buildMetrics(events: DentleEvent[], subscribers: Subscriber[], dailyCases: DailyCaseRecord[]) {
+  const today = dayKey(new Date());
   const uniqueDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setUTCDate(date.getUTCDate() - (6 - index));
@@ -69,8 +70,28 @@ export function buildMetrics(events: DentleEvent[], subscribers: Subscriber[], d
   const totalSolves = events.filter((event) => event.event_type === "board_solved").length;
   const totalFails = events.filter((event) => event.event_type === "board_failed").length;
   const totalStarts = events.filter((event) => event.event_type === "board_select").length;
+  const rollingSubscriptions = daily.reduce((total, day) => total + day.subscriptions, 0);
+  const todayEvents = events.filter((event) => event.created_at.startsWith(today));
+  const todayViews = todayEvents.filter((event) => event.event_type === "page_view").length;
+  const todayUsers = new Set(todayEvents.map((event) => event.visitor_id).filter(Boolean)).size;
+  const todayGuesses = todayEvents.filter((event) => event.event_type === "guess_submit").length;
+  const todaySolves = todayEvents.filter((event) => event.event_type === "board_solved").length;
+  const todayFails = todayEvents.filter((event) => event.event_type === "board_failed").length;
+  const todayStarts = todayEvents.filter((event) => event.event_type === "board_select").length;
+  const todaySubscriptions = subscribers.filter((subscriber) => subscriber.created_at.startsWith(today)).length;
 
   return {
+    today: {
+      day: today,
+      views: todayViews,
+      users: todayUsers,
+      starts: todayStarts,
+      guesses: todayGuesses,
+      solves: todaySolves,
+      fails: todayFails,
+      subscriptions: todaySubscriptions,
+      solveRate: todayStarts ? Math.round((todaySolves / todayStarts) * 100) : 0
+    },
     totals: {
       views: totalViews,
       users: totalUsers,
@@ -80,7 +101,7 @@ export function buildMetrics(events: DentleEvent[], subscribers: Subscriber[], d
       fails: totalFails,
       subscribers: subscribers.length,
       solveRate: totalStarts ? Math.round((totalSolves / totalStarts) * 100) : 0,
-      subscribeRate: totalViews ? Math.round((subscribers.length / totalViews) * 100) : 0
+      subscribeRate: totalViews ? Math.round((rollingSubscriptions / totalViews) * 100) : 0
     },
     daily,
     boards: Object.values(boards)
@@ -101,7 +122,8 @@ export function buildMetrics(events: DentleEvent[], subscribers: Subscriber[], d
         category: event.board_category || "Unknown",
         attempt: event.attempt_number || 0,
         isCorrect: event.is_correct === true,
-        guess: typeof event.metadata?.guess_text === "string" ? event.metadata.guess_text : ""
+        guess: typeof event.metadata?.guess_text === "string" ? event.metadata.guess_text : "",
+        player: event.visitor_id ? `Player ${event.visitor_id.slice(0, 8)}` : "Unknown player"
       })),
     latestSubscribers: subscribers.slice(0, 12),
     dailyCases

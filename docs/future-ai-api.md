@@ -214,6 +214,22 @@ Default image rule:
 - Generic dental-office, smiling-patient, or random tooth photos should not be used for cases.
 - If a real licensed clinical image is unavailable, use a clearly labeled educational diagram or generated synthetic image that matches the case finding.
 
+## Library
+
+Background images for your slides. Ships with curated aesthetic packs — scrape more from Pinterest with your own Apify key.
+
+- Use the library for social slide backgrounds and deck textures, not for clinical clue images.
+- The default pack should include clean dental study looks: soft gradients, muted clinical palettes, subtle line art, and text-friendly overlays.
+- If you want Pinterest-inspired mood boards, use Apify with a Pinterest scraping key to gather aesthetic background ideas.
+- Pinterest searches can be framed as style queries, for example:
+  - `dental study background`
+  - `clinical slide texture`
+  - `medical aesthetic collage`
+  - `minimal dental presentation`
+  - `oral pathology mood board`
+- Always review and clear licensing before using any scraped Pinterest assets. Treat these sources as inspiration for designed background packs rather than direct case images.
+- Store library metadata as pack name, source, and intended use so automation can choose case-appropriate backgrounds separately from clue images.
+
 Request:
 
 ```json

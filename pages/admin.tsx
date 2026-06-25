@@ -8,6 +8,17 @@ type Metrics = {
   aiConfigured?: boolean;
   missing?: string[];
   error?: string;
+  today?: {
+    day: string;
+    views: number;
+    users: number;
+    starts: number;
+    guesses: number;
+    solves: number;
+    fails: number;
+    subscriptions: number;
+    solveRate: number;
+  };
     totals?: {
     views: number;
     users: number;
@@ -21,14 +32,16 @@ type Metrics = {
   };
   daily?: Array<{ day: string; views: number; users: number; guesses: number; solves: number; subscriptions: number }>;
   boards?: Array<{ board: string; starts: number; guesses: number; solves: number; fails: number; solveRate: number; averageSolveAttempts: number }>;
-  recentGuesses?: Array<{ id: string; created_at: string; board: string; category: string; attempt: number; isCorrect: boolean; guess: string }>;
+  recentGuesses?: Array<{ id: string; created_at: string; board: string; category: string; attempt: number; isCorrect: boolean; guess: string; player: string }>;
   latestSubscribers?: Array<{ id: string; created_at: string; email: string }>;
   dailyCases?: Array<{ id: string; publish_date: string; source: string; status: string; cases: typeof cases; updated_at: string }>;
   cloudPlayers?: {
     available: boolean;
     total?: number;
     activeSevenDays?: number;
+    activeToday?: number;
     completedBoards?: number;
+    completedToday?: number;
     winRate?: number;
     averageWinningAttempts?: number;
     recent?: Array<{ id: string; lastSeen: string; games: number; wins: number }>;
@@ -240,12 +253,13 @@ export default function Admin() {
         {metrics?.connected && metrics.totals && (
           <div className={justUpdated ? "adminData justUpdated" : "adminData"}>
             <section className="metricGrid">
-              <article><span>Daily views</span><strong>{metrics.totals.views}</strong></article>
-              <article><span>Users</span><strong>{metrics.totals.users}</strong></article>
-              <article><span>Board starts</span><strong>{metrics.totals.starts}</strong></article>
-              <article><span>Guesses</span><strong>{metrics.totals.guesses}</strong></article>
-              <article><span>Solves</span><strong>{metrics.totals.solves}</strong></article>
-              <article><span>Subscribers</span><strong>{metrics.totals.subscribers}</strong></article>
+              <article><span>Today&apos;s views</span><strong>{metrics.today?.views || 0}</strong></article>
+              <article><span>Today&apos;s users</span><strong>{metrics.today?.users || 0}</strong></article>
+              <article><span>Cloud players today</span><strong>{metrics.cloudPlayers?.activeToday || 0}</strong></article>
+              <article><span>Today&apos;s starts</span><strong>{metrics.today?.starts || 0}</strong></article>
+              <article><span>Today&apos;s guesses</span><strong>{metrics.today?.guesses || 0}</strong></article>
+              <article><span>Today&apos;s solves</span><strong>{metrics.today?.solves || 0}</strong></article>
+              <article><span>Total subscribers</span><strong>{metrics.totals.subscribers}</strong></article>
             </section>
 
             <section className="adminPanel cloudPlayersPanel">
@@ -267,8 +281,10 @@ export default function Admin() {
                 <>
                   <div className="cloudPlayerGrid">
                     <div><span>Cloud players</span><strong>{metrics.cloudPlayers.total || 0}</strong></div>
+                    <div><span>Active today</span><strong>{metrics.cloudPlayers.activeToday || 0}</strong></div>
                     <div><span>Active 7 days</span><strong>{metrics.cloudPlayers.activeSevenDays || 0}</strong></div>
                     <div><span>Boards recorded</span><strong>{metrics.cloudPlayers.completedBoards || 0}</strong></div>
+                    <div><span>Boards today</span><strong>{metrics.cloudPlayers.completedToday || 0}</strong></div>
                     <div><span>Cloud win rate</span><strong>{metrics.cloudPlayers.winRate || 0}%</strong></div>
                     <div><span>Avg. winning tries</span><strong>{metrics.cloudPlayers.averageWinningAttempts || "-"}</strong></div>
                   </div>
@@ -303,8 +319,8 @@ export default function Admin() {
                   <div><span>Claude</span><strong>{metrics.aiConfigured ? "Ready" : "Missing key"}</strong></div>
                   <div><span>Diagnosis bank</span><strong>{metrics.diagnosisRotation?.bankSize || 0}</strong></div>
                   <div><span>Fresh answers</span><strong>{metrics.diagnosisRotation?.availableAnswers.length || 0}</strong></div>
-                  <div><span>Solve rate</span><strong>{metrics.totals.solveRate}%</strong></div>
-                  <div><span>Subscribe rate</span><strong>{metrics.totals.subscribeRate}%</strong></div>
+                  <div><span>7-day solve rate</span><strong>{metrics.totals.solveRate}%</strong></div>
+                  <div><span>7-day subscribe rate</span><strong>{metrics.totals.subscribeRate}%</strong></div>
                 </div>
               </article>
 
@@ -400,6 +416,7 @@ export default function Admin() {
                   {(metrics.recentGuesses || []).map((guess) => (
                     <div key={guess.id}>
                       <strong>{guess.guess || "No guess text"}</strong>
+                      <span>{guess.player}</span>
                       <span>{guess.board}</span>
                       <span>Try {guess.attempt || "-"}</span>
                       <span className={guess.isCorrect ? "correct" : "miss"}>{guess.isCorrect ? "Correct" : "Miss"}</span>
