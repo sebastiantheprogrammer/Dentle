@@ -42,9 +42,11 @@ type Metrics = {
     activeToday?: number;
     completedBoards?: number;
     completedToday?: number;
+    guessesSevenDays?: number;
+    guessesToday?: number;
     winRate?: number;
     averageWinningAttempts?: number;
-    recent?: Array<{ id: string; lastSeen: string; games: number; wins: number }>;
+    recent?: Array<{ id: string; lastSeen: string; games: number; wins: number; guesses: number }>;
   };
   diagnosisRotation?: {
     bankSize: number;
@@ -342,6 +344,8 @@ export default function Admin() {
                     <div><span>Active 7 days</span><strong>{metrics.cloudPlayers.activeSevenDays || 0}</strong></div>
                     <div><span>Boards recorded</span><strong>{metrics.cloudPlayers.completedBoards || 0}</strong></div>
                     <div><span>Boards today</span><strong>{metrics.cloudPlayers.completedToday || 0}</strong></div>
+                    <div><span>Guesses 7 days</span><strong>{metrics.cloudPlayers.guessesSevenDays || 0}</strong></div>
+                    <div><span>Guesses today</span><strong>{metrics.cloudPlayers.guessesToday || 0}</strong></div>
                     <div><span>Cloud win rate</span><strong>{metrics.cloudPlayers.winRate || 0}%</strong></div>
                     <div><span>Avg. winning tries</span><strong>{metrics.cloudPlayers.averageWinningAttempts || "-"}</strong></div>
                   </div>
@@ -351,6 +355,7 @@ export default function Admin() {
                         <div key={player.id}>
                           <strong>Player {player.id.slice(0, 8)}</strong>
                           <span>{player.games} games</span>
+                          <span>{player.guesses} guesses</span>
                           <span>{player.wins} wins</span>
                           <time>{new Date(player.lastSeen).toLocaleString()}</time>
                         </div>

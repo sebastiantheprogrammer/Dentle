@@ -416,7 +416,12 @@ export default function Home() {
           visitorId: visitorId(),
           boardId: selectedCase.id,
           boardMode: selectedCase.mode,
-          boardCategory: selectedCase.category
+          boardCategory: selectedCase.category,
+          caseTitle: selectedCase.title,
+          casePrompt: selectedCase.prompt,
+          caseAnswer: selectedCase.answer,
+          caseExplanation: selectedCase.explanation,
+          caseDifferentials: selectedCase.differentials
         })
       });
       const data = await response.json();
@@ -696,20 +701,20 @@ export default function Home() {
           <section className="subscribeModal" role="dialog" aria-modal="true" aria-labelledby="subscribe-title">
             <button className="modalClose" type="button" onClick={dismissSubscribe} aria-label="Close">x</button>
             <p className="eyebrow">You solved it</p>
-            <h2 id="subscribe-title">Tomorrow's Dentle drops fresh.</h2>
-            <p>Get one quick reminder when the next dental diagnosis board is live.</p>
+            <h2 id="subscribe-title">Get the full clinical explanation emailed to you.</h2>
+            <p>We&apos;ll send this case breakdown now, plus one quick reminder when tomorrow&apos;s diagnosis board is live.</p>
             {subscribeState === "saved" ? (
-              <div className="subscribeSuccess">You're on the list. See you tomorrow.</div>
+              <div className="subscribeSuccess">You&apos;re on the list. Check your inbox for the case explanation.</div>
             ) : (
               <div className="subscribeForm">
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="Email for daily Dentle"
+                  placeholder="Email for the explanation"
                   type="email"
                 />
                 <button className="primaryAction" type="button" onClick={subscribe} disabled={subscribeState === "saving"}>
-                  {subscribeState === "saving" ? "Saving" : "Notify me"}
+                  {subscribeState === "saving" ? "Sending" : "Send it"}
                 </button>
               </div>
             )}

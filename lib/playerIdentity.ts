@@ -18,12 +18,18 @@ function digest(value: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
 }
 
+export function playerIdentityKey(visitorId: string) {
+  const normalizedVisitor = visitorId.trim().slice(0, 80);
+  if (!normalizedVisitor) throw new Error("Missing visitor ID");
+  return digest(`visitor:${normalizedVisitor}`);
+}
+
 export function playerIdentity(req: NextApiRequest, visitorId: string) {
   const normalizedVisitor = visitorId.trim().slice(0, 80);
   if (!normalizedVisitor) throw new Error("Missing visitor ID");
 
   return {
-    identityKey: digest(`visitor:${normalizedVisitor}`),
+    identityKey: playerIdentityKey(normalizedVisitor),
     ipHash: digest(`ip:${clientIp(req)}`)
   };
 }

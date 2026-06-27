@@ -1,10 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { buildMetrics, type DailyCaseRecord, type DentleEvent, type Subscriber } from "../../../lib/adminMetrics";
 import { diagnosisRotation } from "../../../lib/diagnosisRotation";
+import { playerIdentityKey } from "../../../lib/playerIdentity";
 import { getSupabaseStatus, isAdminKeyValid, supabaseRest } from "../../../lib/supabaseRest";
 
 type CloudPlayer = {
   id: string;
+  identity_key: string;
   created_at: string;
   last_seen_at: string;
 };
@@ -69,16 +71,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           activeToday: number;
           completedBoards: number;
           completedToday: number;
+          guessesSevenDays: number;
+          guessesToday: number;
           winRate: number;
           averageWinningAttempts: number;
-          recent: Array<{ id: string; lastSeen: string; games: number; wins: number }>;
+          recent: Array<{ id: string; lastSeen: string; games: number; wins: number; guesses: number }>;
         }
       | { available: false } = { available: false };
 
     try {
       const [players, results] = await Promise.all([
         supabaseRest<CloudPlayer[]>(
-          "dentle_players?select=id,created_at,last_seen_at&order=last_seen_at.desc&limit=1000"
+          "dentle_players?select=id,identity_key,created_at,last_seen_at&order=last_seen_at.desc&limit=1000"
         ),
         supabaseRest<CloudResult[]>(
           "dentle_player_results?select=player_id,solved,attempt_number,created_at&order=created_at.desc&limit=5000"
@@ -88,6 +92,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
       const today = new Date().toISOString().slice(0, 10);
       const wins = results.filter((result) => result.solved);
+      const guessEvents = events.filter((event) => event.event_type === "guess_submit" && event.visitor_id);
+      const guessesByIdentity = guessEvents.reduce<Record<string, number>>((acc, event) => {
+        try {
+          const key = playerIdentityKey(event.visitor_id || "");
+          acc[key] = (acc[key] || 0) + 1;
+        } catch {
+          return acc;
+        }
+        return acc;
+      }, {});
       const gamesByPlayer = results.reduce<Record<string, { games: number; wins: number }>>((acc, result) => {
         if (!acc[result.player_id]) acc[result.player_id] = { games: 0, wins: 0 };
         acc[result.player_id].games += 1;
@@ -102,6 +116,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         activeToday: players.filter((player) => player.last_seen_at.startsWith(today)).length,
         completedBoards: results.length,
         completedToday: results.filter((result) => result.created_at.startsWith(today)).length,
+        guessesSevenDays: guessEvents.length,
+        guessesToday: guessEvents.filter((event) => event.created_at.startsWith(today)).length,
         winRate: results.length ? Math.round((wins.length / results.length) * 100) : 0,
         averageWinningAttempts: wins.length
           ? Number((wins.reduce((total, result) => total + (result.attempt_number || 0), 0) / wins.length).toFixed(1))
@@ -110,7 +126,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id: player.id,
           lastSeen: player.last_seen_at,
           games: gamesByPlayer[player.id]?.games || 0,
-          wins: gamesByPlayer[player.id]?.wins || 0
+          wins: gamesByPlayer[player.id]?.wins || 0,
+          guesses: guessesByIdentity[player.identity_key] || 0
         }))
       };
     } catch {

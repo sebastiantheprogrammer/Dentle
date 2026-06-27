@@ -1,9 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { rateLimit } from "../../lib/rateLimit";
+import { sendCaseExplanationEmail } from "../../lib/resendEmail";
 import { getSupabaseStatus, supabaseRest } from "../../lib/supabaseRest";
 
 function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function textField(value: unknown, fallback = "") {
+  return typeof value === "string" ? value.trim().slice(0, 500) : fallback;
+}
+
+function textList(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim().slice(0, 120)).slice(0, 5)
+    : [];
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -58,7 +69,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     });
 
-    res.status(200).json({ subscribed: true });
+    let explanationEmailSent = false;
+    try {
+      const emailResult = await sendCaseExplanationEmail({
+        to: email,
+        caseTitle: textField(req.body?.caseTitle, "Dentle diagnosis case"),
+        prompt: textField(req.body?.casePrompt),
+        answer: textField(req.body?.caseAnswer),
+        explanation: textField(req.body?.caseExplanation),
+        differentials: textList(req.body?.caseDifferentials)
+      });
+      explanationEmailSent = emailResult.sent;
+    } catch (error) {
+      console.error(error);
+    }
+
+    res.status(200).json({ subscribed: true, explanationEmailSent });
   } catch (error) {
     console.error(error);
     res.status(500).json({ subscribed: false, error: "Subscription failed." });
