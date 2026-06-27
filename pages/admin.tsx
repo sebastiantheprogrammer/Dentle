@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
 import { cases } from "../lib/cases";
 
+type AnalyticsBucket = {
+  name: string;
+  count: number;
+};
+
 type Metrics = {
   connected: boolean;
   cronConfigured?: boolean;
@@ -44,6 +49,15 @@ type Metrics = {
     completedToday?: number;
     guessesSevenDays?: number;
     guessesToday?: number;
+    locations?: {
+      countries: AnalyticsBucket[];
+      cities: AnalyticsBucket[];
+    };
+    devices?: {
+      types: AnalyticsBucket[];
+      browsers: AnalyticsBucket[];
+      operatingSystems: AnalyticsBucket[];
+    };
     winRate?: number;
     averageWinningAttempts?: number;
     recent?: Array<{ id: string; lastSeen: string; games: number; wins: number; guesses: number }>;
@@ -349,6 +363,58 @@ export default function Admin() {
                     <div><span>Cloud win rate</span><strong>{metrics.cloudPlayers.winRate || 0}%</strong></div>
                     <div><span>Avg. winning tries</span><strong>{metrics.cloudPlayers.averageWinningAttempts || "-"}</strong></div>
                   </div>
+                  <div className="cloudInsightGrid">
+                    <div>
+                      <h3>Top countries</h3>
+                      {(metrics.cloudPlayers.locations?.countries || []).length ? (
+                        (metrics.cloudPlayers.locations?.countries || []).map((item) => (
+                          <span key={item.name}><b>{item.name}</b><strong>{item.count}</strong></span>
+                        ))
+                      ) : (
+                        <p>New visits will appear here.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3>Top cities</h3>
+                      {(metrics.cloudPlayers.locations?.cities || []).length ? (
+                        (metrics.cloudPlayers.locations?.cities || []).map((item) => (
+                          <span key={item.name}><b>{item.name}</b><strong>{item.count}</strong></span>
+                        ))
+                      ) : (
+                        <p>New visits will appear here.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3>Devices</h3>
+                      {(metrics.cloudPlayers.devices?.types || []).length ? (
+                        (metrics.cloudPlayers.devices?.types || []).map((item) => (
+                          <span key={item.name}><b>{item.name}</b><strong>{item.count}</strong></span>
+                        ))
+                      ) : (
+                        <p>New devices will appear here.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3>Browsers</h3>
+                      {(metrics.cloudPlayers.devices?.browsers || []).length ? (
+                        (metrics.cloudPlayers.devices?.browsers || []).map((item) => (
+                          <span key={item.name}><b>{item.name}</b><strong>{item.count}</strong></span>
+                        ))
+                      ) : (
+                        <p>New browsers will appear here.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3>Operating systems</h3>
+                      {(metrics.cloudPlayers.devices?.operatingSystems || []).length ? (
+                        (metrics.cloudPlayers.devices?.operatingSystems || []).map((item) => (
+                          <span key={item.name}><b>{item.name}</b><strong>{item.count}</strong></span>
+                        ))
+                      ) : (
+                        <p>New systems will appear here.</p>
+                      )}
+                    </div>
+                  </div>
                   {(metrics.cloudPlayers.recent || []).length ? (
                     <div className="cloudPlayerList">
                       {(metrics.cloudPlayers.recent || []).map((player) => (
@@ -523,7 +589,9 @@ export default function Admin() {
                         <span style={{ height: `${(day.users / dailyMax) * 100}%` }}><b>{day.users}</b></span>
                       </div>
                       <div className="barTrack guesses">
-                        <span style={{ height: `${(day.guesses / dailyMax) * 100}%` }}><b>{day.guesses}</b></span>
+                        <span style={{ height: `${(day.guesses / dailyMax) * 100}%` }}>
+                          {day.guesses > 0 && <b>{day.guesses}</b>}
+                        </span>
                       </div>
                       <div className="barTrack solves">
                         <span style={{ height: `${(day.solves / dailyMax) * 100}%` }}><b>{day.solves}</b></span>

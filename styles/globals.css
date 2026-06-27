@@ -1080,6 +1080,59 @@ p {
   font-size: 1.8rem;
 }
 
+.cloudInsightGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cloudInsightGrid > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 14px;
+}
+
+.cloudInsightGrid h3 {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.cloudInsightGrid span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid rgba(207, 222, 216, 0.75);
+  padding: 8px 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.cloudInsightGrid span:first-of-type {
+  border-top: 0;
+}
+
+.cloudInsightGrid span b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cloudInsightGrid span strong {
+  color: var(--teal);
+}
+
+.cloudInsightGrid p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
 .cloudPlayerList {
   display: grid;
   gap: 8px;
@@ -1284,7 +1337,7 @@ p {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
   min-height: 240px;
-  padding-top: 10px;
+  padding-top: 34px;
 }
 
 .dayBars {
@@ -1305,7 +1358,7 @@ p {
 .barTrack {
   position: relative;
   height: 200px;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 7px;
   background: #edf3f0;
 }
@@ -1316,6 +1369,7 @@ p {
   right: 0;
   bottom: 0;
   min-height: 2px;
+  border-radius: 7px;
   background: var(--teal);
 }
 
@@ -1325,6 +1379,25 @@ p {
 
 .barTrack.guesses span {
   background: var(--gold);
+}
+
+.barTrack.guesses b {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  display: block;
+  min-width: 28px;
+  padding: 3px 6px 4px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(145, 120, 49, 0.28);
+  border-radius: 999px;
+  background: #fffefa;
+  color: #806717;
+  font-size: 0.76rem;
+  font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(16, 33, 31, 0.08);
 }
 
 .barTrack.users span {

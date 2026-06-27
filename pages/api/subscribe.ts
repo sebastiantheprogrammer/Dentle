@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { rateLimit } from "../../lib/rateLimit";
+import { requestAnalytics } from "../../lib/requestAnalytics";
 import { sendCaseExplanationEmail } from "../../lib/resendEmail";
 import { getSupabaseStatus, supabaseRest } from "../../lib/supabaseRest";
 
@@ -65,7 +66,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         board_id: typeof req.body?.boardId === "string" ? req.body.boardId.slice(0, 120) : null,
         board_mode: typeof req.body?.boardMode === "string" ? req.body.boardMode.slice(0, 120) : null,
         board_category: typeof req.body?.boardCategory === "string" ? req.body.boardCategory.slice(0, 120) : null,
-        metadata: { email_domain: email.split("@")[1] || "" }
+        metadata: {
+          email_domain: email.split("@")[1] || "",
+          analytics: requestAnalytics(req)
+        }
       })
     });
 

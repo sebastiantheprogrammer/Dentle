@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { rateLimit } from "../../lib/rateLimit";
+import { requestAnalytics } from "../../lib/requestAnalytics";
 import { getSupabaseStatus, supabaseRest } from "../../lib/supabaseRest";
 
 const allowedEvents = new Set([
@@ -12,6 +13,14 @@ const allowedEvents = new Set([
   "subscribe_prompt_dismiss",
   "subscribe_submit"
 ]);
+
+function eventMetadata(value: unknown) {
+  if (!value || typeof value !== "object") return {};
+  const metadata = value as Record<string, unknown>;
+  return {
+    ...(typeof metadata.guess_text === "string" ? { guess_text: metadata.guess_text.slice(0, 120) } : {})
+  };
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -39,6 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const clientMetadata = eventMetadata(req.body?.metadata);
     await supabaseRest("dentle_events", {
       method: "POST",
       headers: { Prefer: "return=minimal" },
@@ -50,7 +60,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         board_category: typeof req.body?.boardCategory === "string" ? req.body.boardCategory.slice(0, 120) : null,
         attempt_number: Number.isFinite(req.body?.attemptNumber) ? req.body.attemptNumber : null,
         is_correct: typeof req.body?.isCorrect === "boolean" ? req.body.isCorrect : null,
-        metadata: typeof req.body?.metadata === "object" && req.body.metadata ? req.body.metadata : {}
+        metadata: {
+          ...clientMetadata,
+          analytics: requestAnalytics(req)
+        }
       })
     });
 

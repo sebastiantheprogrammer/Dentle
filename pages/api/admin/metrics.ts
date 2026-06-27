@@ -38,6 +38,36 @@ type CaseModeration = {
   last_reported_at: string | null;
 };
 
+type AnalyticsBucket = {
+  name: string;
+  count: number;
+};
+
+function topValues(events: DentleEvent[], reader: (event: DentleEvent) => unknown, limit = 8): AnalyticsBucket[] {
+  const counts = events.reduce<Record<string, number>>((acc, event) => {
+    const value = reader(event);
+    const label = typeof value === "string" && value.trim() ? value.trim() : "Unknown";
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
+function analyticsMetadata(event: DentleEvent) {
+  const analytics = event.metadata?.analytics;
+  return analytics && typeof analytics === "object" ? analytics as Record<string, unknown> : {};
+}
+
+function nestedValue(event: DentleEvent, group: "location" | "device", key: string) {
+  const analytics = analyticsMetadata(event);
+  const values = analytics[group];
+  return values && typeof values === "object" ? (values as Record<string, unknown>)[key] : undefined;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!isAdminKeyValid(req.headers["x-admin-key"] as string | undefined)) {
     res.status(401).json({ error: "Admin password required." });
@@ -73,6 +103,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           completedToday: number;
           guessesSevenDays: number;
           guessesToday: number;
+          locations: {
+            countries: AnalyticsBucket[];
+            cities: AnalyticsBucket[];
+          };
+          devices: {
+            types: AnalyticsBucket[];
+            browsers: AnalyticsBucket[];
+            operatingSystems: AnalyticsBucket[];
+          };
           winRate: number;
           averageWinningAttempts: number;
           recent: Array<{ id: string; lastSeen: string; games: number; wins: number; guesses: number }>;
@@ -93,6 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const today = new Date().toISOString().slice(0, 10);
       const wins = results.filter((result) => result.solved);
       const guessEvents = events.filter((event) => event.event_type === "guess_submit" && event.visitor_id);
+      const knownAnalyticsEvents = events.filter((event) => Boolean(event.metadata?.analytics));
       const guessesByIdentity = guessEvents.reduce<Record<string, number>>((acc, event) => {
         try {
           const key = playerIdentityKey(event.visitor_id || "");
@@ -118,6 +158,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         completedToday: results.filter((result) => result.created_at.startsWith(today)).length,
         guessesSevenDays: guessEvents.length,
         guessesToday: guessEvents.filter((event) => event.created_at.startsWith(today)).length,
+        locations: {
+          countries: topValues(knownAnalyticsEvents, (event) => nestedValue(event, "location", "country")),
+          cities: topValues(knownAnalyticsEvents, (event) => {
+            const city = nestedValue(event, "location", "city");
+            const region = nestedValue(event, "location", "region");
+            const country = nestedValue(event, "location", "country");
+            const parts = [city, region, country].filter((part) => typeof part === "string" && part && part !== "Unknown");
+            return parts.length ? parts.join(", ") : "Unknown";
+          })
+        },
+        devices: {
+          types: topValues(knownAnalyticsEvents, (event) => nestedValue(event, "device", "type")),
+          browsers: topValues(knownAnalyticsEvents, (event) => nestedValue(event, "device", "browser")),
+          operatingSystems: topValues(knownAnalyticsEvents, (event) => nestedValue(event, "device", "os"))
+        },
         winRate: results.length ? Math.round((wins.length / results.length) * 100) : 0,
         averageWinningAttempts: wins.length
           ? Number((wins.reduce((total, result) => total + (result.attempt_number || 0), 0) / wins.length).toFixed(1))
